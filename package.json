@@ -1,0 +1,36 @@
+{
+  "name": "placemat",
+  "version": "0.1.0",
+  "description": "A lightweight module designed to make interacting with SQL databases a little easier.",
+  "main": "index.js",
+  "dependencies": {
+    "any-db": "~2.1.0",
+    "squel": "~3.1.1",
+    "stride": "~0.1.3"
+  },
+  "devDependencies": {
+    "gulp": "^3.6.1",
+    "gulp-jshint": "^1.5.3",
+    "jshint-stylish": "^0.1.5",
+    "should": "^3.3.1",
+    "mocha": "^1.18.2",
+    "any-db-mysql": "^2.1.1"
+  },
+  "scripts": {
+    "test": "mocha test --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jkirkwood/placemat.git"
+  },
+  "keywords": [
+    "sql",
+    "mysql",
+    "database",
+    "validation",
+    "getters",
+    "setters"
+  ],
+  "author": "James Kirkwood <jamesk1187@gmail.com>",
+  "license": "MIT"
+}
