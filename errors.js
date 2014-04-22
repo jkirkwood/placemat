@@ -8,9 +8,6 @@ var PlacematError = function(message, constructor) {
 };
 util.inherits(PlacematError, Error);
 
-
-
-// Unauthorized error
 var ValidationError = function(fields) {
   PlacematError.call(this, 'validation has failed', this.constructor);
   this.name = 'ValidationError';
@@ -28,6 +25,13 @@ ValidationError.prototype.hasErrors = function hasErrors() {
   return this.fields.length > 0;
 };
 
+var ConstraintError = function() {
+  PlacematError.call(this, 'cannot delete due to foreign reference', this.constructor);
+  this.name = 'ConstraintError';
+};
+util.inherits(ConstraintError, PlacematError);
+
 
 exports.PlacematError = PlacematError;
 exports.ValidationError = ValidationError;
+exports.ConstraintError = ConstraintError;

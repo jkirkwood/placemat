@@ -22,7 +22,8 @@ Usage
 -----
 First thing to do is to require placemat and to open a connection to your
 database. Placemat uses [node-any-db](https://github.com/grncdr/node-any-db) to
-establish a connection to the db of your choosing.
+establish a connection to the db of your choosing (Note: this module has only
+been tested with MySQL. It may, or may not, work with other db varieties).
 
 Use `placemat.connect(connOpts, poolOpts)`
 
@@ -246,7 +247,7 @@ specific points during the insert, update, or remove process. These can be used
 to modify data before it is saved, to do asynchronus validation, or to
 update a caching layer when a record is changed, among other things.
 
-#### Table.preValidate(ids, data, isNew, cb)
+#### Table#preValidate(ids, data, isNew, cb)
 Called after defaults are applied but before validation occurs.
 - `ids` - array containing the ids that are being saved. Will be `null` when
   called during an insert.
@@ -255,7 +256,7 @@ Called after defaults are applied but before validation occurs.
 - `cb` - should be called when hook is complete. An error can be passed to
   cause the save to fail.
 
-#### Table.preSave(ids, data, isNew, cb)
+#### Table#preSave(ids, data, isNew, cb)
 Called after setters and validation are applied, but before the actual db
 query.
 - `ids` - array containing the ids that are being saved. Will be `null` when
@@ -265,23 +266,49 @@ query.
 - `cb` - should be called when hook is complete. An error can be passed to
   cause the save to fail.
 
-#### Table.postSave(ids, data, isNew)
+#### Table#postSave(ids, data, isNew)
 Called after records have been successfully inserted or updated.
 - `ids` - array containing the ids that were saved. Will include the id of
   any inserted rows.
 - `data` - data that was saved.
 - `isNew` - set to `true` when called during an insert.
 
-#### Table.preDelete(ids, cb)
+#### Table#preDelete(ids, cb)
 Called before rows are deleted.
 - `ids` - array containing the ids that will be deleted.
 - `cb` - should be called when hook is complete. An error can be passed to
   cause the deletion to fail.
 
-#### Table.postDelete(ids)
+#### Table#postDelete(ids)
 Called after records have successfully been deleted.
 - `ids` - array containing the ids that were deleted.
 
+### Table Errors
+
+The table functions can return the following errors:
+
+#### placemat.PlacematError
+Generic placemat error. Returned when function is called before database
+connection is initialized.
+
+#### placemat.ValidationError
+Validation error. Contains `fields` property which is an array containing an
+object for each field that failed validation. Each object has a `name` and
+`message` property.
+
+Placemat has logic built in that returns a ValidationError when a bad foreign
+key reference is created, or when a duplicate is entered on a field with
+unique key.
+
+#### placemat.ConstraintError
+Returned when a row has a foreign key contraint that prevents it from being
+deleted.
+
+#### Table.errorAdaptor(err)
+This function is called before any error is returned from placemat. It can
+be overridden to better integrate errors with your application (i.e. if you have
+specific error types that you want returned for REST requests, etc.). This
+function takes a placemat error as a parameter, and should return an error.
 
 
 

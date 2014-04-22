@@ -3,7 +3,8 @@ var anyDb = require('any-db')
   , stride = require('stride')
   , revalidator = require('revalidator')
   , ValidationError = require('./errors').ValidationError
-  , PlacematError = require('./errors').PlacematError;
+  , PlacematError = require('./errors').PlacematError
+  , ConstraintError = require('./errors').ConstraintError;
 
 // Register js Date type with squel
 squel.registerValueHandler(Date, function(date) {
@@ -190,7 +191,7 @@ Table.prototype.insert = function insert(data, cb) {
       return true;
     }
   ).once('done', function(err) {
-    cb(err, data);
+    cb(self.translateError(err), data);
   });
 };
 
@@ -249,7 +250,7 @@ Table.prototype.update = function update(ids, idField, data, cb) {
       return results.affectedRows;
     }
   ).once('done', function(err, affectedRows) {
-    cb(err, data, affectedRows);
+    cb(self.translateError(err), data, affectedRows);
   });
 
 };
@@ -286,7 +287,7 @@ Table.prototype.remove = function remove(ids, idField, cb) {
       return results.affectedRows;
     }
   ).once('done', function(err, affectedRows) {
-    cb(err, affectedRows);
+    cb(self.translateError(err), affectedRows);
   });
 };
 
@@ -341,7 +342,7 @@ Table.prototype.get = function get(ids, idField, fields, cb) {
       return data;
     }
   ).once('done', function(err, results) {
-    cb(err, results);
+    cb(self.translateError(err), results);
   });
 };
 
@@ -372,6 +373,46 @@ Table.prototype.find = function find(sql, cb) {
       return data;
     }
   ).once('done', function(err, results) {
-    cb(err, results);
+    cb(self.translateError(err), results);
   });
 };
+
+Table.prototype.translateError = function translateError(err) {
+  var field;
+
+  if (!err) {
+    return err;
+  }
+
+  if (!(err instanceof PlacematError) && err.errno) {
+    switch(err.errno) {
+    case 1452: // ER_NO_REFERENCED_ROW_
+      field = err.message.match(/FOREIGN KEY \(`([^`]+)`\)/)[1];
+      err = new ValidationError();
+      err.addField(field, 'reference not found');
+      break;
+    case 1062: // ER_DUP_ENTRY
+      field = err.message.match(/for key '(.*)'/)[1];
+      field = field === 'PRIMARY' ? this.idField : field;
+      err = new ValidationError();
+      err.addField(field, 'already exists');
+      break;
+    case 1451: // ER_ROW_IS_REFERENCED_
+      err = new ConstraintError();
+      break;
+    default:
+      break;
+    }
+  }
+
+  return Table.errorAdaptor(err);
+};
+
+Table.errorAdaptor = function(err) {
+  return err;
+};
+
+exports.PlacematError = PlacematError;
+exports.ValidationError = ValidationError;
+exports.ConstraintError = ConstraintError;
+
