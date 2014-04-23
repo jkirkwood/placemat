@@ -291,73 +291,112 @@ Table.prototype.remove = function remove(ids, idField, cb) {
   });
 };
 
-Table.prototype.get = function get(ids, idField, fields, cb) {
-  var self = this
-    , data;
-
-  if (!connection) {
-    return cb(new PlacematError("Must open connection before calling get()."));
-  }
-
-  ids = Array.isArray(ids) ? ids : [ids];
-
-  // Reorg args
+Table.prototype.findById = function findById(ids, idField, options, cb) {
   if (arguments.length === 2) {
     cb = idField;
     idField = undefined;
-    fields = undefined;
+    options = undefined;
   }
   else if(arguments.length === 3) {
-    cb = fields;
-    fields = undefined;
+    cb = options;
+    options = undefined;
   }
 
-  fields = fields || '*';
-  fields = Array.isArray(fields) ? fields : [fields];
-  idField = idField || self.idField;
+  ids = Array.isArray(ids) ? ids : [ids];
+  idField = idField || this.idField;
 
-  stride(
-    function get() {
-      var sql = squel.select().from(self.tableName);
+  options = options || {};
+  options.where = options.where || [];
+  options.where = Array.isArray(options.where) ? options.where : [options.where];
+  options.params = options.params || [];
 
-      for (var i = 0; i < fields.length; i++) {
-        sql.field(fields[i]);
-      }
+  var q = [];
 
-      sql.where(idField + ' IN ?', ids);
+  for (var i = 0; i < ids.length; i++) {
+    q.push('?');
+  }
 
-      db.query(sql.toString(), this);
-    },
-    function getters(results) {
-      data = results.rows;
+  options.where.push(idField + ' IN (' + q.join(',') + ')');
+  options.params = options.params.concat(ids);
 
-      if (!data.length) {
-        return [];
-      }
-
-      for (var i = 0; i < data.length; i++) {
-        self._applyGetters(data[i]);
-      }
-
-      return data;
-    }
-  ).once('done', function(err, results) {
-    cb(self.translateError(err), results);
-  });
+  this.find(options, cb);
 };
 
+Table.prototype.find = function find(options, cb) {
+  var self = this
+    , i;
 
-Table.prototype.find = function find(sql, cb) {
+  if (!connection) {
+    return cb(new PlacematError("Must open connection before calling findMany()."));
+  }
+
+  if (cb === undefined) {
+    cb = options;
+    options = {};
+  }
+
+  options.where = options.where || [];
+  options.where = Array.isArray(options.where) ? options.where : [options.where];
+
+  options.params = options.params || [];
+
+  options.fields = options.fields || '*';
+  options.fields = Array.isArray(options.fields) ? options.fields : [options.fields];
+
+  options.order = options.order || [];
+  options.order = Array.isArray(options.order) ? options.order : [options.order];
+
+  var sql = squel.select().from(self.tableName);
+
+  for (i = 0; i < options.fields.length; i++) {
+    if (typeof options.fields[i] === 'object') {
+      sql.field(options.fields[i].field, options.fields[i].alias);
+    }
+    else {
+      sql.field(options.fields[i]);
+    }
+  }
+
+  for (i = 0; i < options.where.length; i++) {
+    sql.where(options.where[i]);
+  }
+
+  for (i = 0; i < options.order.length; i++) {
+    if (typeof options.order[i] === 'object') {
+      sql.order(options.order[i].field, options.order[i].ascending);
+    }
+    else {
+      sql.order(options.order[i]);
+    }
+  }
+
+  if (options.limit) {
+    sql.limit(options.limit);
+  }
+
+  if (options.offset) {
+    sql.offset(options.offset);
+  }
+  this.query(sql.toString(), options.params, cb);
+};
+
+Table.prototype.query = function query(sql, params, cb) {
   var self = this
     , data;
 
   if (!connection) {
-    return cb(new PlacematError("Must open connection before calling find()."));
+    return cb(new PlacematError("Must open connection before calling query()."));
+  }
+
+  // Reorg args
+  if (cb === undefined) {
+    cb = params;
+    params = undefined;
   }
 
   stride(
-    function query() {
-      db.query(sql, this);
+    function runQuery() {
+      db.query(sql, params || [], this);
     },
     function getters(results) {
       data = results.rows;

@@ -164,7 +164,7 @@ users.insert({
     }, function(err, data, affectedRows) {
 
       // Fetch the user by id
-      users.get(id, function(err, user) {
+      users.findById(id, function(err, user) {
         var name = user[0].name;
 
         // Delete the user
@@ -222,21 +222,40 @@ Delete record(s) from the table.
 - `cb` - callback of the form `cb(err, affectedRows)`
   - `affectedRows` - the number of database rows that were deleted.
 
-#### Table#get(ids, [idField, fields], cb)
-Retrieve row(s) from the table.
+#### Table#findById(ids, [idField, options], cb)
+Retrieve row(s) from the table by id.
 - `ids` - id(s) of row(s) to retrieve. Can be a single value, or an array of
   several values to retrieve multiple items.
 - `idField` - can be set if you want to find rows by a field other
   than the primary key (email address, etc). Defaults to the table's `idField`.
-- `fields` - array containing names of fields to retrieve from the table. If
-  only a single field needs to be retrieved, this can just be a string. By
-  default all fields are retrieved.
+- `options` - object containing options, all of which are optional. Can include:
+  - `where` - WHERE clause to use with the query. Can be a single string, or an
+    array of multiple strings, each containing an individual statement.
+  - `params` - array containing parameters to use with the query.
+  - `fields` - array containing names of fields to retrieve from the table. If
+    only a single field needs to be retrieved, this can just be a string. By
+    default all fields are retrieved.
+    An alias can be assigned to fields by supplying an object with a `field` and
+    an `alias` property instead of a string.
+  - `order` - name of field to sort results by. To sort by multiple fields this
+    property can be set to an array of multiple strings. By default sorts are
+    ascending. To do a descending sort pass an object with a `field` and
+    `ascending` property and set `ascending` to false.
+  - `limit` - number of rows to limit result to.
+  - `offset` - offset to apply to retrieved rows.
 - `cb` - callback of the form `cb(err, records)`
   - `records` - array containing each row that was found.
 
-#### Table#find(sql, cb)
-Find table rows using a raw sql query.
+#### Table#find([options], cb)
+Find table rows. By default all rows are retrieved.
+- `options` - same as in `Table#findById()`.
+- `cb` - callback of the form `cb(err, records)`
+  - `records` - array containing each row that was found.
+
+#### Table#query(sql, [params], cb)
+Find table rows using a raw sql query. Useful for more advanced operations.
 - `sql` - sql query to execute.
+- `params` - parameters to apply in query.
 - `cb` - callback of the form `cb(err, records)`
   - `records` - array containing each row that was found.
 

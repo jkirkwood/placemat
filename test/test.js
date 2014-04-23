@@ -139,7 +139,8 @@ describe('Placemat', function() {
       "VALUES " +
         "(1,'James','james@example.com', 26, '2014-04-21 21:23:33','123456ab'), " +
         "(2,'John','john@example.com', 32, '2014-04-21 21:23:33','123456ab'), " +
-        "(3,'Jake','jake@example.com', 55, '2014-04-21 21:23:33','123456ab');";
+        "(3,'Jake','jake@example.com', 55, '2014-04-21 21:23:33','123456ab'), " +
+        "(4,'Jake','jake2@example.com', 55, '2014-04-21 21:23:33','123456ab');";
     db.query(sql, done);
   });
 
@@ -170,9 +171,9 @@ describe('Placemat', function() {
     //db.query('DROP TABLE IF EXISTS `placemat_users`', done);
   });
 
-  describe('#get()', function() {
+  describe('#findById()', function() {
     it('should be able to retrieve a single record by id', function(done) {
-      users.get(1, function(err, res) {
+      users.findById(1, function(err, res) {
         if (err) {
           return done(err);
         }
@@ -182,7 +183,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to retrieve multiple records by id', function(done) {
-      users.get([1, 2], function(err, res) {
+      users.findById([1, 2], function(err, res) {
         if (err) {
           return done(err);
         }
@@ -193,53 +194,8 @@ describe('Placemat', function() {
       });
     });
 
-    it('should not return fields that are "private"', function(done) {
-      users.get([1, 2], function(err, res) {
-        if (err) {
-          return done(err);
-        }
-        res[0].should.have.property('name', 'James');
-        res[0].should.not.have.property('password');
-        res[1].should.have.property('name', 'John');
-        res[1].should.not.have.property('password');
-        done();
-      });
-    });
-
-    it('should apply getters', function(done) {
-      users.get(1, function(err, res) {
-        if (err) {
-          return done(err);
-        }
-        res[0].should.have.property('createdAt', '***');
-        done();
-      });
-    });
-
-    it('should be able to retrieve only a single field', function(done) {
-      users.get(1, null, 'name', function(err, res) {
-        if (err) {
-          return done(err);
-        }
-        res[0].should.have.keys('name');
-        done();
-      });
-    });
-
-    it('should be able to retrieve multiple fields', function(done) {
-      users.get(1, null, ['name', 'email'], function(err, res) {
-        if (err) {
-          return done(err);
-        }
-        res[0].should.have.keys(['name', 'email']);
-        res[0].should.have.property('name', 'James');
-        res[0].should.have.property('email', 'james@example.com');
-        done();
-      });
-    });
-
     it('should be able to retrieve a record by a field other than "id"', function(done) {
-      users.get('james@example.com', 'email', function(err, res) {
+      users.findById('james@example.com', 'email', function(err, res) {
         if (err) {
           return done(err);
         }
@@ -250,8 +206,129 @@ describe('Placemat', function() {
   });
 
   describe('#find()', function() {
+    it('should return all records with no options', function(done) {
+      users.find(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.length(4);
+        done();
+      });
+    });
+
+    it('should be able to use a where clause', function(done) {
+      users.find({
+        where:'name = "Jake"'
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.length(2);
+        res[0].should.have.property('name', 'Jake');
+        done();
+      });
+    });
+
+    it('should be able to use multiple where clauses', function(done) {
+      users.find({
+        where:['name = "Jake"', 'email = "jake2@example.com"']
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.length(1);
+        res[0].should.have.property('name', 'Jake');
+        res[0].should.have.property('email', 'jake2@example.com');
+        done();
+      });
+    });
+
+    it('should accept where clause parameters', function(done) {
+      users.find({
+        where: 'name = ?',
+        params: ['James']
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.length(1);
+        res[0].should.have.property('name', 'James');
+        done();
+      });
+    });
+
+    it('should be able to return a single field', function(done) {
+      users.find({
+        fields: 'name'
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res[0].should.have.keys('name');
+        done();
+      });
+    });
+
+    it('should be able to return multiple fields', function(done) {
+      users.find({
+        fields: ['name', 'email']
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res[0].should.have.keys('name', 'email');
+        done();
+      });
+    });
+
+    it('should be able to assign an alias to fields', function(done) {
+      users.find({
+        fields: ['name', {field: 'email', alias: 'emailAddress'}],
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res[0].should.have.keys(['name', 'emailAddress']);
+        done();
+      });
+    });
+
+    it('should be able to apply sorting', function(done) {
+      users.find({
+        order: 'name'
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.length(4);
+        res[0].should.have.property('name', 'Jake');
+        res[1].should.have.property('name', 'Jake');
+        res[2].should.have.property('name', 'James');
+        res[3].should.have.property('name', 'John');
+        done();
+      });
+    });
+
+    it('should be able to apply descending sorting', function(done) {
+      users.find({
+        order: {field: 'name', ascending: false}
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.length(4);
+        res[0].should.have.property('name', 'John');
+        res[1].should.have.property('name', 'James');
+        res[2].should.have.property('name', 'Jake');
+        res[3].should.have.property('name', 'Jake');
+        done();
+      });
+    });
+  });
+
+  describe('#query()', function() {
     it('should execute queries successfully', function(done) {
-      users.find("SELECT * FROM placemat_users", function(err, res) {
+      users.query("SELECT * FROM placemat_users", function(err, res) {
         if (err) {
           return done(err);
         }
@@ -260,8 +337,21 @@ describe('Placemat', function() {
       });
     });
 
+    it('should apply parameters', function(done) {
+      users.query("SELECT * FROM placemat_users WHERE email = ?",
+        ['james@example.com'], function(err, res)
+      {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.length(1);
+        res[0].should.have.property('email', 'james@example.com');
+        done();
+      });
+    });
+
     it('should apply getters', function(done) {
-      users.find("SELECT * FROM placemat_users", function(err, res) {
+      users.query("SELECT * FROM placemat_users", function(err, res) {
         if (err) {
           return done(err);
         }
@@ -271,23 +361,21 @@ describe('Placemat', function() {
     });
 
     it('should remove "private" fields from results', function(done) {
-      users.find("SELECT * FROM placemat_users", function(err, res) {
+      users.query("SELECT * FROM placemat_users", function(err, res) {
         if (err) {
           return done(err);
         }
         res[0].should.not.have.property('password');
-        res.should.have.length(3);
         done();
       });
     });
 
     it('should be able to retrieve only some fields without problems', function(done) {
-      users.find("SELECT name FROM placemat_users", function(err, res) {
+      users.query("SELECT name FROM placemat_users", function(err, res) {
         if (err) {
           return done(err);
         }
         res[0].should.have.property('name');
-        res.should.have.length(3);
         done();
       });
     });
@@ -304,7 +392,7 @@ describe('Placemat', function() {
           return done(err);
         }
         affectedRows.should.equal(1);
-        users.get(1, function(err, user) {
+        users.findById(1, function(err, user) {
           if (err) {
             return done(err);
           }
@@ -322,7 +410,7 @@ describe('Placemat', function() {
           return done(err);
         }
         affectedRows.should.equal(2);
-        users.get([1, 2], function(err, users) {
+        users.findById([1, 2], function(err, users) {
           if (err) {
             return done(err);
           }
@@ -367,7 +455,7 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        users.get(1, function(err, user) {
+        users.findById(1, function(err, user) {
           if (err) {
             return done(err);
           }
@@ -384,7 +472,7 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        users.get(1, function(err, user) {
+        users.findById(1, function(err, user) {
           if (err) {
             return done(err);
           }
@@ -419,11 +507,11 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        users.find("SELECT * FROM placemat_users", function(err, res) {
+        users.query("SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
-          res.should.have.length(2);
+          res.should.have.length(3);
           res[0].id.should.equal(2);
           done();
         });
@@ -435,7 +523,7 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        users.find("SELECT * FROM placemat_users", function(err, res) {
+        users.findById("SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -458,7 +546,7 @@ describe('Placemat', function() {
           return done(err);
         }
         res.should.have.property('id');
-        users.get(res.id, function(err, user) {
+        users.findById(res.id, function(err, user) {
           user[0].should.have.property('name', 'James');
           users.remove(res.id, done);
         });
@@ -471,7 +559,7 @@ describe('Placemat', function() {
         password: '123456ab'
       }, function(err, res) {
         err.fields[0].name.should.equal('email');
-        users.find("SELECT * FROM placemat_users", function(err, res) {
+        users.findById("SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -489,7 +577,7 @@ describe('Placemat', function() {
         password: '123456ab'
       }, function(err, res) {
         err.fields[0].name.should.equal('junk');
-        users.find("SELECT * FROM placemat_users", function(err, res) {
+        users.findById("SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -506,7 +594,7 @@ describe('Placemat', function() {
         password: '123456ab'
       }, function(err, res) {
         err.fields[0].name.should.equal('email');
-        users.find("SELECT * FROM placemat_users", function(err, res) {
+        users.findById("SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -525,7 +613,7 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        users.get(res.id, function(err, user) {
+        users.findById(res.id, function(err, user) {
           user[0].name.should.equal('James');
           user[0].email.should.equal('jamesk1187@gmail.com');
           done();
@@ -543,7 +631,7 @@ describe('Placemat', function() {
         }
         res.should.have.property('createdAt');
         res.createdAt.should.be.an.instanceof(Date);
-        users.get(res.id, function(err, user) {
+        users.findById(res.id, function(err, user) {
           user[0].should.have.property('name', 'John Doe');
           done();
         });
@@ -558,7 +646,7 @@ describe('Placemat', function() {
       }, function(err, res) {
         err.should.be.an.instanceof(placemat.ValidationError);
         err.fields[0].name.should.equal('userId');
-        parts.find("SELECT * FROM placemat_parts", function(err, res) {
+        parts.findById("SELECT * FROM placemat_parts", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -572,7 +660,7 @@ describe('Placemat', function() {
       parts.insert({
         serialNumber: 1,
         name: 'widget',
-        userId: 5
+        userId: 4
       }, function(err, res) {
         if (err) {
           return done(err);
