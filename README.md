@@ -302,6 +302,32 @@ Called before rows are deleted.
 Called after records have successfully been deleted.
 - `ids` - array containing the ids that were deleted.
 
+### Table Events
+
+Table inherits `EventEmiiter` and implements the following events:
+
+#### Event 'save'
+Emitted whenever a record is inserted, or updated
+- `ids` - array containing the ids that were saved. Will include the id of
+  any inserted rows.
+- `data` - data that was saved.
+- `isNew` - set to `true` when emitted during an insert.
+
+#### Event 'insert'
+Emitted whenever a record is inserted
+- `ids` - array containing the ids that were inserted
+- `data` - data that was saved.
+
+#### Event 'update'
+Emitted whenever a record is updated
+- `ids` - array containing the ids that were updated.
+- `data` - data that was updated.
+
+#### Event 'remove'
+Emitted whenever a record is removed
+- `ids` - array containing the ids that were removed.
+
+
 ### Table Errors
 
 The table functions can return the following errors:

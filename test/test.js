@@ -402,6 +402,34 @@ describe('Placemat', function() {
       });
     });
 
+    it('should fire update and save events', function(done) {
+      var saveCalled = false
+        , updateCalled = false;
+      users.once('save', function() {
+        saveCalled = true;
+      });
+      users.once('update', function() {
+        updateCalled = true;
+      });
+      users.update(1, {
+        email: 'james123@example.com'
+      }, function(err, res, affectedRows) {
+        if (err) {
+          return done(err);
+        }
+        affectedRows.should.equal(1);
+        users.findById(1, function(err, user) {
+          if (err) {
+            return done(err);
+          }
+          user[0].should.have.property('email', 'james123@example.com');
+          saveCalled.should.equal(true);
+          updateCalled.should.equal(true);
+          done();
+        });
+      });
+    });
+
     it('should be able to update multiple rows simultaneously', function(done) {
       users.update([1, 2], {
         name: 'Bob'
@@ -502,7 +530,11 @@ describe('Placemat', function() {
       });
     });
 
-    it('should be able to remove a single row', function(done) {
+    it('should be able to remove a single row and fire "delete" event', function(done) {
+      var removeCalled = false;
+      users.once('remove', function() {
+        removeCalled = true;
+      });
       users.remove(1, function(err, res) {
         if (err) {
           return done(err);
@@ -513,6 +545,7 @@ describe('Placemat', function() {
           }
           res.should.have.length(3);
           res[0].id.should.equal(2);
+          removeCalled.should.equal(true);
           done();
         });
       });
@@ -535,7 +568,15 @@ describe('Placemat', function() {
   });
 
   describe('#insert()', function() {
-    it('should insert a valid record and return a new id', function(done) {
+    it('should insert a valid record, return a new id, and fire events', function(done) {
+      var saveCalled = false
+        , insertCalled = false;
+      users.once('save', function() {
+        saveCalled = true;
+      });
+      users.once('insert', function() {
+        insertCalled = true;
+      });
       users.insert({
         name: 'James',
         email: 'james@example.com',
@@ -548,6 +589,8 @@ describe('Placemat', function() {
         res.should.have.property('id');
         users.findById(res.id, function(err, user) {
           user[0].should.have.property('name', 'James');
+          saveCalled.should.equal(true);
+          insertCalled.should.equal(true);
           users.remove(res.id, done);
         });
       });

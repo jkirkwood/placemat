@@ -1,4 +1,6 @@
-var anyDb = require('any-db')
+var EventEmitter = require("events").EventEmitter
+  , util = require("util")
+  , anyDb = require('any-db')
   , squel = require('squel')
   , stride = require('stride')
   , revalidator = require('revalidator')
@@ -40,6 +42,8 @@ var Table = exports.Table = function(tableName, idField, schema) {
     idField = 'id';
   }
 
+  EventEmitter.call(this);
+
   this.tableName = tableName;
   this.schema = schema;
   this.idField = idField;
@@ -54,8 +58,8 @@ var Table = exports.Table = function(tableName, idField, schema) {
       this.revalidatorSchema.properties[field] = schema.fields[field].validation;
     }
   }
-
 };
+util.inherits(Table, EventEmitter);
 
 // These functions can be overwritten as necessary
 Table.prototype.preValidate = function preValidate(ids, data, isNew, cb) {cb();};
@@ -188,6 +192,8 @@ Table.prototype.insert = function insert(data, cb) {
     function postSave(result) {
       data[self.idField] = result.lastInsertId;
       self.postSave([result.lastInsertId], data, true);
+      self.emit('insert', [result.lastInsertId], data);
+      self.emit('save', [result.lastInsertId], data, true);
       return true;
     }
   ).once('done', function(err) {
@@ -247,6 +253,8 @@ Table.prototype.update = function update(ids, idField, data, cb) {
     },
     function postSave(results) {
       self.postSave(ids, data, false);
+      self.emit('update', ids, data);
+      self.emit('save', ids, data, false);
       return results.affectedRows;
     }
   ).once('done', function(err, affectedRows) {
@@ -284,6 +292,7 @@ Table.prototype.remove = function remove(ids, idField, cb) {
     },
     function postDelete(results) {
       self.postDelete(ids);
+      self.emit('remove', ids);
       return results.affectedRows;
     }
   ).once('done', function(err, affectedRows) {
