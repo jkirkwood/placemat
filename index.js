@@ -118,7 +118,7 @@ Table.prototype._applyDefaults = function _applyDefaults(data, isNew) {
   for (i = 0; i < fieldNames.length; i++) {
     if (data[fieldNames[i]] === undefined &&
         this.schema.fields[fieldNames[i]] &&
-        this.schema.fields[fieldNames[i]].default)
+        this.schema.fields[fieldNames[i]].default !== undefined)
     {
       defVal = this.schema.fields[fieldNames[i]].default;
       if (typeof defVal === 'function') {
