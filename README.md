@@ -165,7 +165,7 @@ users.insert({
 
       // Fetch the user by id
       users.findById(id, function(err, user) {
-        var name = user[0].name;
+        var name = user.name;
 
         // Delete the user
         users.remove(id, function(err, affectedRows) {});
@@ -243,8 +243,10 @@ Retrieve row(s) from the table by id.
     `ascending` property and set `ascending` to false.
   - `limit` - number of rows to limit result to.
   - `offset` - offset to apply to retrieved rows.
-- `cb` - callback of the form `cb(err, records)`
-  - `records` - array containing each row that was found.
+- `cb` - callback of the form `cb(err, record)`
+  - `records` - if `ids` is an array, this value will be an array of objects
+    (one for each row retrieved). If only a single id was specified in a
+    non-array format, `records` will be an object, or `null`.
 
 #### Table#find([options], cb)
 Find table rows. By default all rows are retrieved.

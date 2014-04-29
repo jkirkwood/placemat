@@ -184,7 +184,17 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        res[0].should.have.property('name', 'James');
+        res.should.have.property('name', 'James');
+        done();
+      });
+    });
+
+    it('should return "null" when no matching record is found', function(done) {
+      users.findById(2342, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        (res === null).should.equal(true);
         done();
       });
     });
@@ -206,7 +216,7 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        res[0].should.have.property('name', 'James');
+        res.should.have.property('name', 'James');
         done();
       });
     });
@@ -403,7 +413,7 @@ describe('Placemat', function() {
           if (err) {
             return done(err);
           }
-          user[0].should.have.property('email', 'james123@example.com');
+          user.should.have.property('email', 'james123@example.com');
           done();
         });
       });
@@ -429,7 +439,7 @@ describe('Placemat', function() {
           if (err) {
             return done(err);
           }
-          user[0].should.have.property('email', 'james123@example.com');
+          user.should.have.property('email', 'james123@example.com');
           saveCalled.should.equal(true);
           updateCalled.should.equal(true);
           done();
@@ -494,7 +504,7 @@ describe('Placemat', function() {
           if (err) {
             return done(err);
           }
-          user[0].should.have.property('email', 'bob456@example.com');
+          user.should.have.property('email', 'bob456@example.com');
           done();
         });
       });
@@ -511,7 +521,7 @@ describe('Placemat', function() {
           if (err) {
             return done(err);
           }
-          res.should.have.property('age', null);
+          user.should.have.property('age', null);
           done();
         });
       });
@@ -563,7 +573,7 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        users.findById("SELECT * FROM placemat_users", function(err, res) {
+        users.findById([2, 3], function(err, res) {
           if (err) {
             return done(err);
           }
@@ -595,7 +605,7 @@ describe('Placemat', function() {
         }
         res.should.have.property('id');
         users.findById(res.id, function(err, user) {
-          user[0].should.have.property('name', 'James');
+          user.should.have.property('name', 'James');
           saveCalled.should.equal(true);
           insertCalled.should.equal(true);
           users.remove(res.id, done);
@@ -609,11 +619,11 @@ describe('Placemat', function() {
         password: '123456ab'
       }, function(err, res) {
         err.fields[0].name.should.equal('email');
-        users.findById("SELECT * FROM placemat_users", function(err, res) {
+        users.query("SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
-          res.should.have.length(0);
+          res.should.have.length(1);
           done();
         });
       });
@@ -627,11 +637,11 @@ describe('Placemat', function() {
         password: '123456ab'
       }, function(err, res) {
         err.fields[0].name.should.equal('junk');
-        users.findById("SELECT * FROM placemat_users", function(err, res) {
+        users.query("SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
-          res.should.have.length(0);
+          res.should.have.length(1);
           done();
         });
       });
@@ -644,11 +654,11 @@ describe('Placemat', function() {
         password: '123456ab'
       }, function(err, res) {
         err.fields[0].name.should.equal('email');
-        users.findById("SELECT * FROM placemat_users", function(err, res) {
+        users.query("SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
-          res.should.have.length(0);
+          res.should.have.length(1);
           done();
         });
       });
@@ -664,8 +674,8 @@ describe('Placemat', function() {
           return done(err);
         }
         users.findById(res.id, function(err, user) {
-          user[0].name.should.equal('James');
-          user[0].email.should.equal('jamesk1187@gmail.com');
+          user.name.should.equal('James');
+          user.email.should.equal('jamesk1187@gmail.com');
           done();
         });
       });
@@ -682,7 +692,7 @@ describe('Placemat', function() {
         res.should.have.property('createdAt');
         res.createdAt.should.be.an.instanceof(Date);
         users.findById(res.id, function(err, user) {
-          user[0].should.have.property('name', 'John Doe');
+          user.should.have.property('name', 'John Doe');
           done();
         });
       });
@@ -696,7 +706,7 @@ describe('Placemat', function() {
       }, function(err, res) {
         err.should.be.an.instanceof(placemat.ValidationError);
         err.fields[0].name.should.equal('userId');
-        parts.findById("SELECT * FROM placemat_parts", function(err, res) {
+        parts.query("SELECT * FROM placemat_parts", function(err, res) {
           if (err) {
             return done(err);
           }

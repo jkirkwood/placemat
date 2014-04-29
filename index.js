@@ -312,7 +312,9 @@ Table.prototype.findById = function findById(ids, idField, options, cb) {
     options = undefined;
   }
 
-  ids = Array.isArray(ids) ? ids : [ids];
+  var returnArray = Array.isArray(ids);
+
+  ids = returnArray ? ids : [ids];
   idField = idField || this.idField;
 
   options = options || {};
@@ -329,7 +331,22 @@ Table.prototype.findById = function findById(ids, idField, options, cb) {
   options.where.push(idField + ' IN (' + q.join(',') + ')');
   options.params = options.params.concat(ids);
 
-  this.find(options, cb);
+  this.find(options, function(err, results) {
+    if (err) {
+      return cb(err, results);
+    }
+    if (returnArray) {
+      return cb(err, results);
+    }
+    else {
+      if (results.length >= 1) {
+        cb(err, results[0]);
+      }
+      else {
+        cb(err, null);
+      }
+    }
+  });
 };
 
 Table.prototype.find = function find(options, cb) {
