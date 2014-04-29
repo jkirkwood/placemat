@@ -171,6 +171,13 @@ describe('Placemat', function() {
     //db.query('DROP TABLE IF EXISTS `placemat_users`', done);
   });
 
+  describe('exports.db', function() {
+    it('should not be null after connection is established', function(done) {
+      placemat.db.should.not.equal(null);
+      done();
+    });
+  });
+
   describe('#findById()', function() {
     it('should be able to retrieve a single record by id', function(done) {
       users.findById(1, function(err, res) {

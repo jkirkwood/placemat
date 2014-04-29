@@ -29,6 +29,7 @@ exports.connect = function(connOpts, poolOpts) {
     db = anyDb.createPool(connOpts, poolOpts);
   }
   connection = true;
+  exports.db = db;
   return db;
 };
 
