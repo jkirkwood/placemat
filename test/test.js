@@ -447,6 +447,28 @@ describe('Placemat', function() {
       });
     });
 
+    it('should apply getters to returned/postSave data', function(done) {
+      users.once('save', function(ids, data, isNew) {
+        data.should.have.property('createdAt', '***');
+        data.should.not.have.property('password');
+        data.should.have.property('email', 'james24523@example.com');
+      });
+      users.update(1, {
+        email: 'james24523@example.com',
+        password: '123456ab',
+        createdAt: new Date()
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.property('email', 'james24523@example.com');
+        res.should.not.have.property('password');
+        res.should.have.property('createdAt', '***');
+        done();
+      });
+    });
+
+
     it('should be able to update multiple rows simultaneously', function(done) {
       users.update([1, 2], {
         name: 'Bob'
@@ -613,6 +635,28 @@ describe('Placemat', function() {
       });
     });
 
+    it('should apply getters to returned/postSave data', function(done) {
+      users.once('save', function(ids, data, isNew) {
+        data.should.have.property('createdAt', '***');
+        data.should.not.have.property('password');
+      });
+      users.insert({
+        name: 'James',
+        email: 'james24523@example.com',
+        password: '123456ab',
+        createdAt: new Date()
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.property('name', 'James');
+        res.should.have.property('email', 'james24523@example.com');
+        res.should.have.property('createdAt', '***');
+        res.should.not.have.property('password');
+        users.remove(res.id, done);
+      });
+    });
+
     it('should fail when a required field is undefined', function(done) {
       users.insert({
         name: 'James',
@@ -682,6 +726,12 @@ describe('Placemat', function() {
     });
 
     it('should use defaults when a field is undefined', function(done) {
+      users.preSave = function(ids, data, isNew, cb) {
+        data.should.have.property('createdAt');
+        data.createdAt.should.be.an.instanceof(Date);
+        users.preSave = function preSave(ids, data, isNew, cb) {cb();};
+        cb();
+      };
       users.insert({
         email: 'jamesk1187@gmail.com',
         password: '123456ab'
@@ -689,8 +739,6 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        res.should.have.property('createdAt');
-        res.createdAt.should.be.an.instanceof(Date);
         users.findById(res.id, function(err, user) {
           user.should.have.property('name', 'John Doe');
           done();

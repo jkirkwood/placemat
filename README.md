@@ -200,7 +200,7 @@ Add a new record to the table.
 - `data` - object containing fields to save to the inserted row.
 - `cb` - callback of the form `cb(err, data)`
   - `data` - Data that was inserted into the database. Primary key of inserted
-    row will be included.
+    row will be included. Getters are applied to this data.
 
 #### Table#update(ids, [idField], data, cb)
 Update record(s) in the table.
@@ -210,7 +210,8 @@ Update record(s) in the table.
   than the primary key. Defaults to the table's `idField`.
 - `data` - object containing properties to update on selected row(s).
 - `cb` - callback of the form `cb(err, data, affectedRows)`
-  - `data` - data that was updated for the selected row(s).
+  - `data` - data that was updated for the selected row(s). Getters are applied
+    to this data.
   - `affectedRows` - the number of database rows that were updated.
 
 #### Table#remove(ids, [idField], cb)
@@ -291,7 +292,7 @@ query.
 Called after records have been successfully inserted or updated.
 - `ids` - array containing the ids that were saved. Will include the id of
   any inserted rows.
-- `data` - data that was saved.
+- `data` - data that was saved. Getters are applied to this data.
 - `isNew` - set to `true` when called during an insert.
 
 #### Table#preDelete(ids, cb)
@@ -312,7 +313,7 @@ Table inherits `EventEmiiter` and implements the following events:
 Emitted whenever a record is inserted, or updated
 - `ids` - array containing the ids that were saved. Will include the id of
   any inserted rows.
-- `data` - data that was saved.
+- `data` - data that was saved. Getters are applied to this data.
 - `isNew` - set to `true` when emitted during an insert.
 
 #### Event 'insert'
@@ -323,7 +324,7 @@ Emitted whenever a record is inserted
 #### Event 'update'
 Emitted whenever a record is updated
 - `ids` - array containing the ids that were updated.
-- `data` - data that was updated.
+- `data` - data that was updated. Getters are applied to this data.
 
 #### Event 'remove'
 Emitted whenever a record is removed

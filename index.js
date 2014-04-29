@@ -190,11 +190,15 @@ Table.prototype.insert = function insert(data, cb) {
 
       db.query(sql.text, sql.values, this);
     },
-    function postSave(result) {
+    function getters(result) {
       data[self.idField] = result.lastInsertId;
-      self.postSave([result.lastInsertId], data, true);
-      self.emit('insert', [result.lastInsertId], data);
-      self.emit('save', [result.lastInsertId], data, true);
+      self._applyGetters(data);
+      return true;
+    },
+    function postSave() {
+      self.postSave([data[self.idField]], data, true);
+      self.emit('insert', [data[self.idField]], data);
+      self.emit('save', [data[self.idField]], data, true);
       return true;
     }
   ).once('done', function(err) {
@@ -252,11 +256,15 @@ Table.prototype.update = function update(ids, idField, data, cb) {
 
       db.query(sql.text, sql.values, this);
     },
-    function postSave(results) {
+    function getters(results) {
+      self._applyGetters(data);
+      return results.affectedRows;
+    },
+    function postSave(affectedRows) {
       self.postSave(ids, data, false);
       self.emit('update', ids, data);
       self.emit('save', ids, data, false);
-      return results.affectedRows;
+      return affectedRows;
     }
   ).once('done', function(err, affectedRows) {
     cb(self.translateError(err), data, affectedRows);
