@@ -195,20 +195,30 @@ Instantiate a new placemat table.
 
 ### Table Methods
 
-#### Table#insert(data, cb)
+#### Table#insert(data, [options], cb)
 Add a new record to the table.
 - `data` - object containing fields to save to the inserted row.
+- `options` - object containing options, all of which are optional. Can include:
+  - `ignorePrivate` - set to `true` if private fields should not be removed from
+    postSave data
+  - `ignoreGetters` - set to `true` if getters should not be applied to
+    postSave data.
 - `cb` - callback of the form `cb(err, data)`
   - `data` - Data that was inserted into the database. Primary key of inserted
     row will be included. Getters are applied to this data.
 
-#### Table#update(ids, [idField], data, cb)
+#### Table#update(ids, [idField], data, [options], cb)
 Update record(s) in the table.
 - `ids` - id(s) of row(s) to update. Can be a single value, or an array of
   several values to update multiple items.
 - `idField` - can be set if you want to find rows to update by a field other
   than the primary key. Defaults to the table's `idField`.
 - `data` - object containing properties to update on selected row(s).
+- `options` - object containing options, all of which are optional. Can include:
+  - `ignorePrivate` - set to `true` if private fields should not be removed from
+    postSave data
+  - `ignoreGetters` - set to `true` if getters should not be applied to
+    postSave data.
 - `cb` - callback of the form `cb(err, data, affectedRows)`
   - `data` - data that was updated for the selected row(s). Getters are applied
     to this data.
@@ -244,6 +254,10 @@ Retrieve row(s) from the table by id.
     `ascending` property and set `ascending` to false.
   - `limit` - number of rows to limit result to.
   - `offset` - offset to apply to retrieved rows.
+  - `ignorePrivate` - set to `true` if private fields should not be removed from
+    retrieved fields.
+  - `ignoreGetters` - set to `true` if getters should not be applied to
+    retrieved fields.
 - `cb` - callback of the form `cb(err, record)`
   - `records` - if `ids` is an array, this value will be an array of objects
     (one for each row retrieved). If only a single id was specified in a
@@ -255,10 +269,15 @@ Find table rows. By default all rows are retrieved.
 - `cb` - callback of the form `cb(err, records)`
   - `records` - array containing each row that was found.
 
-#### Table#query(sql, [params], cb)
+#### Table#query(sql, [params, options], cb)
 Find table rows using a raw sql query. Useful for more advanced operations.
 - `sql` - sql query to execute.
 - `params` - parameters to apply in query.
+- `options` - object containing options, all of which are optional. Can include:
+  - `ignorePrivate` - set to `true` if private fields should not be removed from
+    retrieved fields.
+  - `ignoreGetters` - set to `true` if getters should not be applied to
+    retrieved fields.
 - `cb` - callback of the form `cb(err, records)`
   - `records` - array containing each row that was found.
 

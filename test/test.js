@@ -377,6 +377,17 @@ describe('Placemat', function() {
       });
     });
 
+    it('should honor ignoreGetters option', function(done) {
+      users.query("SELECT * FROM placemat_users", null, {ignoreGetters: true},
+        function(err, res) {
+          if (err) {
+            return done(err);
+          }
+          res[0].createdAt.should.be.instanceof(Date);
+          done();
+        });
+      });
+
     it('should remove "private" fields from results', function(done) {
       users.query("SELECT * FROM placemat_users", function(err, res) {
         if (err) {
@@ -386,6 +397,17 @@ describe('Placemat', function() {
         done();
       });
     });
+
+    it('should honor ignorePrivate option', function(done) {
+      users.query("SELECT * FROM placemat_users", null, {ignorePrivate: true},
+        function(err, res) {
+          if (err) {
+            return done(err);
+          }
+          res[0].should.have.property('password');
+          done();
+        });
+      });
 
     it('should be able to retrieve only some fields without problems', function(done) {
       users.query("SELECT name FROM placemat_users", function(err, res) {
@@ -464,6 +486,25 @@ describe('Placemat', function() {
         res.should.have.property('email', 'james24523@example.com');
         res.should.not.have.property('password');
         res.should.have.property('createdAt', '***');
+        done();
+      });
+    });
+
+    it('should honor ignoreGetters, and ignorePrivate option', function(done) {
+      users.update(1, {
+        email: 'james24523@example.com',
+        password: '123456ab',
+        createdAt: new Date()
+      }, {
+        ignoreGetters: true,
+        ignorePrivate: true
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.property('email', 'james24523@example.com');
+        res.should.have.property('password', '123456ab');
+        res.createdAt.should.be.instanceof(Date);
         done();
       });
     });

@@ -139,26 +139,33 @@ Table.prototype._applySetters = function _applySetters(data) {
   }
 };
 
-Table.prototype._applyGetters = function _applyGetters(data) {
+Table.prototype._applyGetters = function _applyGetters(data, options) {
   var fieldNames = Object.keys(data);
+
+  options = options || {};
 
   for (var i = 0; i < fieldNames.length; i++) {
     if (this.schema.fields[fieldNames[i]]) {
-      if (this.schema.fields[fieldNames[i]].private) {
+      if (this.schema.fields[fieldNames[i]].private && !options.ignorePrivate) {
         delete data[fieldNames[i]];
       }
-      else if (this.schema.fields[fieldNames[i]].getter) {
+      else if (this.schema.fields[fieldNames[i]].getter && !options.ignoreGetters) {
         data[fieldNames[i]] = this.schema.fields[fieldNames[i]].getter(data[fieldNames[i]]);
       }
     }
   }
 };
 
-Table.prototype.insert = function insert(data, cb) {
+Table.prototype.insert = function insert(data, options, cb) {
   var self = this;
 
   if (!connection) {
     return cb(new PlacematError("Must open connection before calling insert()."));
+  }
+
+  if (!cb) {
+    cb = options;
+    options = {};
   }
 
   stride(
@@ -192,7 +199,7 @@ Table.prototype.insert = function insert(data, cb) {
     },
     function getters(result) {
       data[self.idField] = result.lastInsertId;
-      self._applyGetters(data);
+      self._applyGetters(data, options);
       return true;
     },
     function postSave() {
@@ -206,7 +213,7 @@ Table.prototype.insert = function insert(data, cb) {
   });
 };
 
-Table.prototype.update = function update(ids, idField, data, cb) {
+Table.prototype.update = function update(ids, idField, data, options, cb) {
   var self = this;
 
   if (!connection) {
@@ -215,11 +222,22 @@ Table.prototype.update = function update(ids, idField, data, cb) {
 
   ids = Array.isArray(ids) ? ids : [ids];
 
-  // Reorg args
-  if (cb === undefined) {
+  if (arguments.length === 3) {
     cb = data;
     data = idField;
     idField = undefined;
+  }
+  else if (arguments.length === 4) {
+    if (typeof idField === 'string') {
+      cb = options;
+      options = {};
+    }
+    else {
+      cb = options;
+      options = data;
+      data = idField;
+      idField = undefined;
+    }
   }
 
   idField = idField || self.idField;
@@ -257,7 +275,7 @@ Table.prototype.update = function update(ids, idField, data, cb) {
       db.query(sql.text, sql.values, this);
     },
     function getters(results) {
-      self._applyGetters(data);
+      self._applyGetters(data, options);
       return results.affectedRows;
     },
     function postSave(affectedRows) {
@@ -412,10 +430,10 @@ Table.prototype.find = function find(options, cb) {
   if (options.offset) {
     sql.offset(options.offset);
   }
-  this.query(sql.toString(), options.params, cb);
+  this.query(sql.toString(), options.params, options, cb);
 };
 
-Table.prototype.query = function query(sql, params, cb) {
+Table.prototype.query = function query(sql, params, options, cb) {
   var self = this
     , data;
 
@@ -424,9 +442,13 @@ Table.prototype.query = function query(sql, params, cb) {
   }
 
   // Reorg args
-  if (cb === undefined) {
+  if (arguments.length === 2) {
     cb = params;
     params = undefined;
+  }
+  else if (arguments.length === 3) {
+    cb = options;
+    options = undefined;
   }
 
   stride(
@@ -441,7 +463,7 @@ Table.prototype.query = function query(sql, params, cb) {
       }
 
       for (var i = 0; i < data.length; i++) {
-        self._applyGetters(data[i]);
+        self._applyGetters(data[i], options);
       }
 
       return data;
