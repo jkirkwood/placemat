@@ -334,8 +334,15 @@ Table.prototype.findById = function findById(ids, idField, options, cb) {
     options = undefined;
   }
   else if(arguments.length === 3) {
-    cb = options;
-    options = undefined;
+    if (typeof idField === 'string') {
+      cb = options;
+      options = undefined;
+    }
+    else {
+      cb = options;
+      options = idField;
+      idField = null;
+    }
   }
 
   var returnArray = Array.isArray(ids);

@@ -220,6 +220,16 @@ describe('Placemat', function() {
         done();
       });
     });
+
+    it('should be able to work with options, but no idField parameter', function(done) {
+      users.findById(1, {fields: ['id', 'name']}, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.keys('id', 'name');
+        done();
+      });
+    });
   });
 
   describe('#find()', function() {
