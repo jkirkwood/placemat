@@ -479,6 +479,10 @@ describe('Placemat', function() {
       });
     });
 
+    it('should not crash if data is null', function(done) {
+      users.update(1, null, done);
+    });
+
     it('should apply getters to returned/postSave data', function(done) {
       users.once('save', function(ids, data, isNew) {
         data.should.have.property('createdAt', '***');

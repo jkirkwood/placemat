@@ -243,7 +243,7 @@ Table.prototype.update = function update(ids, idField, data, options, cb) {
   idField = idField || self.idField;
 
   // If there is no data, stop immediately
-  if (Object.keys(data).length === 0) {
+  if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
     return cb(null, data, 0);
   }
 
