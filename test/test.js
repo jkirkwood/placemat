@@ -212,7 +212,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to retrieve a record by a field other than "id"', function(done) {
-      users.findById('james@example.com', 'email', function(err, res) {
+      users.findById({email: 'james@example.com'}, function(err, res) {
         if (err) {
           return done(err);
         }

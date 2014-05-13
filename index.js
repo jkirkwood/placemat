@@ -213,34 +213,27 @@ Table.prototype.insert = function insert(data, options, cb) {
   });
 };
 
-Table.prototype.update = function update(ids, idField, data, options, cb) {
-  var self = this;
+Table.prototype.update = function update(ids, data, options, cb) {
+  var self = this
+    , idIsObject = false;
 
   if (!connection) {
     return cb(new PlacematError("Must open connection before calling update()."));
   }
 
-  ids = Array.isArray(ids) ? ids : [ids];
-
-  if (arguments.length === 3) {
-    cb = data;
-    data = idField;
-    idField = undefined;
+  if (!cb) {
+    cb = options;
+    options = {};
   }
-  else if (arguments.length === 4) {
-    if (typeof idField === 'string') {
-      cb = options;
-      options = {};
+
+  if (!Array.isArray(ids)) {
+    if (typeof ids === 'object') {
+      idIsObject = true;
     }
     else {
-      cb = options;
-      options = data;
-      data = idField;
-      idField = undefined;
+      ids = [ids];
     }
   }
-
-  idField = idField || self.idField;
 
   // If there is no data, stop immediately
   if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
@@ -268,7 +261,15 @@ Table.prototype.update = function update(ids, idField, data, options, cb) {
         sql.set(field, data[field]);
       }
 
-      sql.where(idField + ' IN ?', ids);
+      if (idIsObject) {
+        for (var i in ids) {
+          sql.where(i + ' = ?', ids[i]);
+        }
+        ids = [ids];
+      }
+      else {
+        sql.where(self.idField + ' IN ?', ids);
+      }
 
       sql = sql.toParam();
 
@@ -290,22 +291,24 @@ Table.prototype.update = function update(ids, idField, data, options, cb) {
 
 };
 
-Table.prototype.remove = function remove(ids, idField, cb) {
-  var self = this;
+Table.prototype.remove = function remove(ids, cb) {
+  var self = this
+    , idIsObject = false;
 
   if (!connection) {
     return cb(new PlacematError("Must open connection before calling remove()."));
   }
 
-  // Reorg args
-  if (cb === undefined) {
-    cb = idField;
-    idField = undefined;
+  if (!Array.isArray(ids)) {
+    if (typeof ids === 'object') {
+      idIsObject = true;
+    }
+    else {
+      ids = [ids];
+    }
   }
 
   ids = Array.isArray(ids) ? ids : [ids];
-
-  idField = idField || self.idField;
 
   stride(
     function preDelete() {
@@ -313,8 +316,17 @@ Table.prototype.remove = function remove(ids, idField, cb) {
     },
     function remove() {
       var sql = squel.delete()
-        .from(self.tableName)
-        .where(self.idField + ' IN ?', ids);
+        .from(self.tableName);
+
+      if (idIsObject) {
+        for (var i in ids) {
+          sql.where(i + ' = ?', ids[i]);
+        }
+        ids = [ids];
+      }
+      else {
+        sql.where(self.idField + ' IN ?', ids);
+      }
       db.query(sql.toString(), this);
     },
     function postDelete(results) {
@@ -327,42 +339,48 @@ Table.prototype.remove = function remove(ids, idField, cb) {
   });
 };
 
-Table.prototype.findById = function findById(ids, idField, options, cb) {
-  if (arguments.length === 2) {
-    cb = idField;
-    idField = undefined;
-    options = undefined;
+Table.prototype.findById = function findById(ids, options, cb) {
+  var self = this
+    , idIsObject = false
+    , returnArray = Array.isArray(ids);
+
+  if (!cb) {
+    cb = options;
+    options = {};
   }
-  else if(arguments.length === 3) {
-    if (typeof idField === 'string') {
-      cb = options;
-      options = undefined;
+
+  if (!Array.isArray(ids)) {
+    if (typeof ids === 'object') {
+      idIsObject = true;
     }
     else {
-      cb = options;
-      options = idField;
-      idField = null;
+      ids = [ids];
     }
   }
-
-  var returnArray = Array.isArray(ids);
-
-  ids = returnArray ? ids : [ids];
-  idField = idField || this.idField;
 
   options = options || {};
   options.where = options.where || [];
   options.where = Array.isArray(options.where) ? options.where : [options.where];
   options.params = options.params || [];
 
-  var q = [];
+  var q = []
+    , i;
 
-  for (var i = 0; i < ids.length; i++) {
-    q.push('?');
+  if (idIsObject) {
+    for (i in ids) {
+      options.where.push(i + ' = ?');
+      options.params.push(ids[i]);
+    }
+    ids = [ids];
   }
+  else {
+    for (i = 0; i < ids.length; i++) {
+      q.push('?');
+    }
 
-  options.where.push(idField + ' IN (' + q.join(',') + ')');
-  options.params = options.params.concat(ids);
+    options.where.push(self.idField + ' IN (' + q.join(',') + ')');
+    options.params = options.params.concat(ids);
+  }
 
   this.find(options, function(err, results) {
     if (err) {

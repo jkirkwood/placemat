@@ -205,14 +205,16 @@ Add a new record to the table.
     postSave data.
 - `cb` - callback of the form `cb(err, data)`
   - `data` - Data that was inserted into the database. Primary key of inserted
-    row will be included. Getters are applied to this data.
+    row will be included (based on lastInsertId of query). Getters are applied
+    to this data.
 
-#### Table#update(ids, [idField], data, [options], cb)
+#### Table#update(ids, data, [options], cb)
 Update record(s) in the table.
 - `ids` - id(s) of row(s) to update. Can be a single value, or an array of
-  several values to update multiple items.
-- `idField` - can be set if you want to find rows to update by a field other
-  than the primary key. Defaults to the table's `idField`.
+  several values to update multiple items. This value can also be a single object
+  containing field/value pairs. This comes in handy when trying to update a row
+  by a field other than the primary key, or if the primary key is based on more
+  than one field.
 - `data` - object containing properties to update on selected row(s).
 - `options` - object containing options, all of which are optional. Can include:
   - `ignorePrivate` - set to `true` if private fields should not be removed from
@@ -224,21 +226,19 @@ Update record(s) in the table.
     to this data.
   - `affectedRows` - the number of database rows that were updated.
 
-#### Table#remove(ids, [idField], cb)
+#### Table#remove(ids, cb)
 Delete record(s) from the table.
 - `ids` - id(s) of row(s) to delete. Can be a single value, or an array of
-  several values to delete multiple items.
-- `idField` - can be set if you want to find rows to delete by a field other
-  than the primary key. Defaults to the table's `idField`.
+  several values to delete multiple items. Like in `#update()` this parameter
+  can also be a single object.
 - `cb` - callback of the form `cb(err, affectedRows)`
   - `affectedRows` - the number of database rows that were deleted.
 
-#### Table#findById(ids, [idField, options], cb)
+#### Table#findById(ids, [options], cb)
 Retrieve row(s) from the table by id.
 - `ids` - id(s) of row(s) to retrieve. Can be a single value, or an array of
-  several values to retrieve multiple items.
-- `idField` - can be set if you want to find rows by a field other
-  than the primary key (email address, etc). Defaults to the table's `idField`.
+  several values to retrieve multiple items. Like in `#update()` this parameter
+  can also be a single object.
 - `options` - object containing options, all of which are optional. Can include:
   - `where` - WHERE clause to use with the query. Can be a single string, or an
     array of multiple strings, each containing an individual statement.
@@ -301,7 +301,8 @@ Called after defaults are applied but before validation occurs.
 Called after setters and validation are applied, but before the actual db
 query.
 - `ids` - array containing the ids that are being saved. Will be `null` when
-  called during an insert.
+  called during an insert. This will always be an array, even if a non-array id
+  was passed to the emitting function.
 - `data` - data that will be saved.
 - `isNew` - set to `true` when called during an insert.
 - `cb` - should be called when hook is complete. An error can be passed to
@@ -310,19 +311,22 @@ query.
 #### Table#postSave(ids, data, isNew)
 Called after records have been successfully inserted or updated.
 - `ids` - array containing the ids that were saved. Will include the id of
-  any inserted rows.
+  any inserted rows. This will always be an array, even if a non-array id
+  was passed to the emitting function.
 - `data` - data that was saved. Getters are applied to this data.
 - `isNew` - set to `true` when called during an insert.
 
 #### Table#preDelete(ids, cb)
 Called before rows are deleted.
-- `ids` - array containing the ids that will be deleted.
+- `ids` - array containing the ids that will be deleted. This will always be
+  an array, even if a non-array id was passed to the emitting function.
 - `cb` - should be called when hook is complete. An error can be passed to
   cause the deletion to fail.
 
 #### Table#postDelete(ids)
 Called after records have successfully been deleted.
-- `ids` - array containing the ids that were deleted.
+- `ids` - array containing the ids that were deleted. This will always be an
+  array, even if a non-array id was passed to the emitting function.
 
 ### Table Events
 
@@ -331,23 +335,28 @@ Table inherits `EventEmiiter` and implements the following events:
 #### Event 'save'
 Emitted whenever a record is inserted, or updated
 - `ids` - array containing the ids that were saved. Will include the id of
-  any inserted rows.
+  any inserted rows. This will always be an array, even if a non-array id
+  was passed to the emitting function.
 - `data` - data that was saved. Getters are applied to this data.
 - `isNew` - set to `true` when emitted during an insert.
 
 #### Event 'insert'
 Emitted whenever a record is inserted
-- `ids` - array containing the ids that were inserted
+- `ids` - array containing the ids that were inserted. This will always be an
+  array, even if a non-array id
+  was passed to the emitting function.
 - `data` - data that was saved.
 
 #### Event 'update'
 Emitted whenever a record is updated
-- `ids` - array containing the ids that were updated.
+- `ids` - array containing the ids that were updated. This will always be an
+  array, even if a non-array id was passed to the emitting function.
 - `data` - data that was updated. Getters are applied to this data.
 
 #### Event 'remove'
 Emitted whenever a record is removed
-- `ids` - array containing the ids that were removed.
+- `ids` - array containing the ids that were removed. This will always be an
+  array, even if a non-array id was passed to the emitting function.
 
 
 ### Table Errors
