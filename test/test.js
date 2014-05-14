@@ -659,6 +659,21 @@ describe('Placemat', function() {
         });
       });
     });
+
+    it('should be able to remove row by field other than id', function(done) {
+      users.remove({email: 'jake2@example.com'}, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        users.query("SELECT * FROM placemat_users", function(err, res) {
+          if (err) {
+            return done(err);
+          }
+          res.should.have.length(0);
+          done();
+        });
+      });
+    });
   });
 
   describe('#insert()', function() {
@@ -722,7 +737,7 @@ describe('Placemat', function() {
           if (err) {
             return done(err);
           }
-          res.should.have.length(1);
+          res.should.have.length(0);
           done();
         });
       });
@@ -740,7 +755,7 @@ describe('Placemat', function() {
           if (err) {
             return done(err);
           }
-          res.should.have.length(1);
+          res.should.have.length(0);
           done();
         });
       });
@@ -757,7 +772,7 @@ describe('Placemat', function() {
           if (err) {
             return done(err);
           }
-          res.should.have.length(1);
+          res.should.have.length(0);
           done();
         });
       });
@@ -823,7 +838,7 @@ describe('Placemat', function() {
       parts.insert({
         serialNumber: 1,
         name: 'widget',
-        userId: 4
+        userId: 8
       }, function(err, res) {
         if (err) {
           return done(err);
@@ -831,7 +846,7 @@ describe('Placemat', function() {
         parts.insert({
           serialNumber: 1,
           name: 'widget',
-          userId: 2
+          userId: 8
         }, function(err, res) {
           err.should.be.an.instanceof(placemat.ValidationError);
           err.fields[0].name.should.equal('serialNumber');

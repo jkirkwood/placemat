@@ -293,7 +293,8 @@ Table.prototype.update = function update(ids, data, options, cb) {
 
 Table.prototype.remove = function remove(ids, cb) {
   var self = this
-    , idIsObject = false;
+    , idIsObject = false
+    , whereSpecified = false;
 
   if (!connection) {
     return cb(new PlacematError("Must open connection before calling remove()."));
@@ -308,8 +309,6 @@ Table.prototype.remove = function remove(ids, cb) {
     }
   }
 
-  ids = Array.isArray(ids) ? ids : [ids];
-
   stride(
     function preDelete() {
       self.preDelete(ids, this);
@@ -321,13 +320,22 @@ Table.prototype.remove = function remove(ids, cb) {
       if (idIsObject) {
         for (var i in ids) {
           sql.where(i + ' = ?', ids[i]);
+          whereSpecified = true;
         }
         ids = [ids];
       }
       else {
         sql.where(self.idField + ' IN ?', ids);
+        whereSpecified = true;
       }
-      db.query(sql.toString(), this);
+
+      if (!whereSpecified) {
+        throw new PlacematError("No where clause specified for remove(). This could be bad.");
+      }
+
+      sql = sql.toParam();
+
+      db.query(sql.text, sql.values, this);
     },
     function postDelete(results) {
       self.postDelete(ids);

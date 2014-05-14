@@ -1,6 +1,6 @@
 {
   "name": "placemat",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "A lightweight module designed to make interacting with SQL databases a little easier.",
   "main": "index.js",
   "dependencies": {
@@ -17,7 +17,7 @@
     "mocha": "^1.18.2"
   },
   "scripts": {
-    "test": "mocha test --reporter spec"
+    "test": "mocha test --reporter spec -b"
   },
   "repository": {
     "type": "git",
