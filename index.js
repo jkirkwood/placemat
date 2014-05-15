@@ -365,6 +365,9 @@ Table.prototype.findById = function findById(ids, options, cb) {
       ids = [ids];
     }
   }
+  else if(ids.length === 0) {
+    return cb(null, []);
+  }
 
   options = options || {};
   options.where = options.where || [];

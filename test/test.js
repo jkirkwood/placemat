@@ -199,6 +199,16 @@ describe('Placemat', function() {
       });
     });
 
+    it('should return empty array when empty array is specified for ids', function(done) {
+      users.findById([], function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res.should.have.length(0);
+        done();
+      });
+    });
+
     it('should be able to retrieve multiple records by id', function(done) {
       users.findById([1, 2], function(err, res) {
         if (err) {
