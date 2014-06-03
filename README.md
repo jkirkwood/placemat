@@ -288,7 +288,7 @@ specific points during the insert, update, or remove process. These can be used
 to modify data before it is saved, to do asynchronus validation, or to
 update a caching layer when a record is changed, among other things.
 
-#### Table#preValidate(ids, data, isNew, cb)
+#### Table#preValidate(ids, data, isNew, cb, meta)
 Called after defaults are applied but before validation occurs.
 - `ids` - array containing the ids that are being saved. Will be `null` when
   called during an insert.
@@ -296,8 +296,10 @@ Called after defaults are applied but before validation occurs.
 - `isNew` - set to `true` when called during an insert.
 - `cb` - should be called when hook is complete. An error can be passed to
   cause the save to fail.
+- `meta` - object where arbitrary data can be stored and be available in all
+  hooks for particular action.
 
-#### Table#preSave(ids, data, isNew, cb)
+#### Table#preSave(ids, data, isNew, cb, meta)
 Called after setters and validation are applied, but before the actual db
 query.
 - `ids` - array containing the ids that are being saved. Will be `null` when
@@ -307,26 +309,34 @@ query.
 - `isNew` - set to `true` when called during an insert.
 - `cb` - should be called when hook is complete. An error can be passed to
   cause the save to fail.
+- `meta` - object where arbitrary data can be stored and be available in all
+  hooks for particular action.
 
-#### Table#postSave(ids, data, isNew)
+#### Table#postSave(ids, data, isNew, meta)
 Called after records have been successfully inserted or updated.
 - `ids` - array containing the ids that were saved. Will include the id of
   any inserted rows. This will always be an array, even if a non-array id
   was passed to the emitting function.
 - `data` - data that was saved. Getters are applied to this data.
 - `isNew` - set to `true` when called during an insert.
+- `meta` - object where arbitrary data can be stored and be available in all
+  hooks for particular action.
 
-#### Table#preDelete(ids, cb)
+#### Table#preDelete(ids, cb, meta)
 Called before rows are deleted.
 - `ids` - array containing the ids that will be deleted. This will always be
   an array, even if a non-array id was passed to the emitting function.
 - `cb` - should be called when hook is complete. An error can be passed to
   cause the deletion to fail.
+- `meta` - object where arbitrary data can be stored and be available in all
+  hooks for particular action.
 
-#### Table#postDelete(ids)
+#### Table#postDelete(ids, meta)
 Called after records have successfully been deleted.
 - `ids` - array containing the ids that were deleted. This will always be an
   array, even if a non-array id was passed to the emitting function.
+- `meta` - object where arbitrary data can be stored and be available in all
+  hooks for particular action.
 
 ### Table Events
 

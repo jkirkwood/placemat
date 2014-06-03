@@ -63,11 +63,11 @@ var Table = exports.Table = function(tableName, idField, schema) {
 util.inherits(Table, EventEmitter);
 
 // These functions can be overwritten as necessary
-Table.prototype.preValidate = function preValidate(ids, data, isNew, cb) {cb();};
-Table.prototype.preSave = function preSave(ids, data, isNew, cb) {cb();};
-Table.prototype.preDelete = function preDelete(ids, cb) {cb();};
-Table.prototype.postSave = function postSave(ids, data, isNew) {};
-Table.prototype.postDelete = function postDelete(ids) {};
+Table.prototype.preValidate = function preValidate(ids, data, isNew, cb, meta) {cb();};
+Table.prototype.preSave = function preSave(ids, data, isNew, cb, meta) {cb();};
+Table.prototype.preDelete = function preDelete(ids, cb, meta) {cb();};
+Table.prototype.postSave = function postSave(ids, data, isNew, meta) {};
+Table.prototype.postDelete = function postDelete(ids, meta) {};
 
 Table.prototype._validate = function _validate(data, isNew, cb) {
   var self = this
@@ -157,7 +157,8 @@ Table.prototype._applyGetters = function _applyGetters(data, options) {
 };
 
 Table.prototype.insert = function insert(data, options, cb) {
-  var self = this;
+  var self = this
+    , meta = {};
 
   if (!connection) {
     return cb(new PlacematError("Must open connection before calling insert()."));
@@ -174,7 +175,7 @@ Table.prototype.insert = function insert(data, options, cb) {
       return true;
     },
     function preValidate() {
-      self.preValidate(null, data, true, this);
+      self.preValidate(null, data, true, this, meta);
     },
     function validate() {
       self._validate(data, true, this);
@@ -184,7 +185,7 @@ Table.prototype.insert = function insert(data, options, cb) {
       return true;
     },
     function preSave() {
-      self.preSave(null, data, true, this);
+      self.preSave(null, data, true, this, meta);
     },
     function save() {
       var sql = squel.insert().into(self.tableName);
@@ -203,7 +204,7 @@ Table.prototype.insert = function insert(data, options, cb) {
       return true;
     },
     function postSave() {
-      self.postSave([data[self.idField]], data, true);
+      self.postSave([data[self.idField]], data, true, meta);
       self.emit('insert', [data[self.idField]], data);
       self.emit('save', [data[self.idField]], data, true);
       return true;
@@ -215,7 +216,8 @@ Table.prototype.insert = function insert(data, options, cb) {
 
 Table.prototype.update = function update(ids, data, options, cb) {
   var self = this
-    , idIsObject = false;
+    , idIsObject = false
+    , meta = {};
 
   if (!connection) {
     return cb(new PlacematError("Must open connection before calling update()."));
@@ -242,7 +244,7 @@ Table.prototype.update = function update(ids, data, options, cb) {
 
   stride(
     function preValidate() {
-      self.preValidate(ids, data, false, this);
+      self.preValidate(ids, data, false, this, meta);
     },
     function validate() {
       self._validate(data, false, this);
@@ -252,7 +254,7 @@ Table.prototype.update = function update(ids, data, options, cb) {
       return true;
     },
     function preSave() {
-      self.preSave(ids, data, false, this);
+      self.preSave(ids, data, false, this, meta);
     },
     function save() {
       var sql = squel.update().table(self.tableName);
@@ -280,7 +282,7 @@ Table.prototype.update = function update(ids, data, options, cb) {
       return results.affectedRows;
     },
     function postSave(affectedRows) {
-      self.postSave(ids, data, false);
+      self.postSave(ids, data, false, meta);
       self.emit('update', ids, data);
       self.emit('save', ids, data, false);
       return affectedRows;
@@ -294,7 +296,8 @@ Table.prototype.update = function update(ids, data, options, cb) {
 Table.prototype.remove = function remove(ids, cb) {
   var self = this
     , idIsObject = false
-    , whereSpecified = false;
+    , whereSpecified = false
+    , meta = {};
 
   if (!connection) {
     return cb(new PlacematError("Must open connection before calling remove()."));
@@ -311,7 +314,7 @@ Table.prototype.remove = function remove(ids, cb) {
 
   stride(
     function preDelete() {
-      self.preDelete(ids, this);
+      self.preDelete(ids, this, meta);
     },
     function remove() {
       var sql = squel.delete()
@@ -338,7 +341,7 @@ Table.prototype.remove = function remove(ids, cb) {
       db.query(sql.text, sql.values, this);
     },
     function postDelete(results) {
-      self.postDelete(ids);
+      self.postDelete(ids, meta);
       self.emit('remove', ids);
       return results.affectedRows;
     }
