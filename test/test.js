@@ -623,6 +623,10 @@ describe('Placemat', function() {
       });
     });
 
+    it('should not crash if ids is empty array', function(done) {
+      users.update([], {name: 'Bob'}, done);
+    });
+
   });
 
   describe('#remove()', function() {
@@ -683,6 +687,10 @@ describe('Placemat', function() {
           done();
         });
       });
+    });
+
+    it('should not crash if ids is empty array', function(done) {
+      users.remove([], done);
     });
   });
 

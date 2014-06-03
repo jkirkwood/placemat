@@ -228,6 +228,11 @@ Table.prototype.update = function update(ids, data, options, cb) {
     options = {};
   }
 
+  // If there are no ids, do nothing
+  if (ids == null || (Array.isArray(ids) && !ids.length)) {
+    return cb(null, data, 0);
+  }
+
   if (!Array.isArray(ids)) {
     if (typeof ids === 'object') {
       idIsObject = true;
@@ -301,6 +306,11 @@ Table.prototype.remove = function remove(ids, cb) {
 
   if (!connection) {
     return cb(new PlacematError("Must open connection before calling remove()."));
+  }
+
+  // If there are no ids, do nothing
+  if (ids == null || (Array.isArray(ids) && !ids.length)) {
+    return cb(null, 0);
   }
 
   if (!Array.isArray(ids)) {
