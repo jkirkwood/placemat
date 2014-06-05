@@ -126,6 +126,10 @@ Table.prototype._applyDefaults = function _applyDefaults(data, isNew) {
       }
       data[fieldNames[i]] = defVal;
     }
+    // Delete undefined fields
+    else if (data[fieldNames[i]] === undefined) {
+      delete data[fieldNames[i]];
+    }
   }
 };
 
