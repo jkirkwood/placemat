@@ -173,6 +173,8 @@ Table.prototype.insert = function insert(data, options, cb) {
     options = {};
   }
 
+  var conn = options.conn || db;
+
   stride(
     function defaults() {
       self._applyDefaults(data, true);
@@ -200,7 +202,7 @@ Table.prototype.insert = function insert(data, options, cb) {
 
       sql = sql.toParam();
 
-      db.query(sql.text, sql.values, this);
+      conn.query(sql.text, sql.values, this);
     },
     function getters(result) {
       data[self.idField] = result.lastInsertId;
@@ -231,6 +233,8 @@ Table.prototype.update = function update(ids, data, options, cb) {
     cb = options;
     options = {};
   }
+
+  var conn = options.conn || db;
 
   // If there are no ids, do nothing
   if (ids == null || (Array.isArray(ids) && !ids.length)) {
@@ -284,7 +288,7 @@ Table.prototype.update = function update(ids, data, options, cb) {
 
       sql = sql.toParam();
 
-      db.query(sql.text, sql.values, this);
+      conn.query(sql.text, sql.values, this);
     },
     function getters(results) {
       self._applyGetters(data, options);
@@ -302,7 +306,7 @@ Table.prototype.update = function update(ids, data, options, cb) {
 
 };
 
-Table.prototype.remove = function remove(ids, cb) {
+Table.prototype.remove = function remove(ids, options, cb) {
   var self = this
     , idIsObject = false
     , whereSpecified = false
@@ -311,6 +315,13 @@ Table.prototype.remove = function remove(ids, cb) {
   if (!connection) {
     return cb(new PlacematError("Must open connection before calling remove()."));
   }
+
+  if (!cb) {
+    cb = options;
+    options = {};
+  }
+
+  var conn = options.conn || db;
 
   // If there are no ids, do nothing
   if (ids == null || (Array.isArray(ids) && !ids.length)) {
@@ -352,7 +363,7 @@ Table.prototype.remove = function remove(ids, cb) {
 
       sql = sql.toParam();
 
-      db.query(sql.text, sql.values, this);
+      conn.query(sql.text, sql.values, this);
     },
     function postDelete(results) {
       self.postDelete(ids, meta);
@@ -498,15 +509,18 @@ Table.prototype.query = function query(sql, params, options, cb) {
   if (arguments.length === 2) {
     cb = params;
     params = undefined;
+    options = {};
   }
   else if (arguments.length === 3) {
     cb = options;
-    options = undefined;
+    options = {};
   }
+
+  var conn = options.conn || db;
 
   stride(
     function runQuery() {
-      db.query(sql, params || [], this);
+      conn.query(sql, params || [], this);
     },
     function getters(results) {
       data = results.rows;
