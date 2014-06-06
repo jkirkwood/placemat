@@ -21,12 +21,12 @@ squel.registerValueHandler(Date, function(date) {
 var db = null
   , connection = false;
 
-exports.connect = function(connOpts, poolOpts) {
+exports.connect = function(connOpts, poolOpts, cb) {
   if (!poolOpts) {
-    db = anyDb.createConnection(connOpts);
+    db = anyDb.createConnection(connOpts, cb);
   }
   else {
-    db = anyDb.createPool(connOpts, poolOpts);
+    db = anyDb.createPool(connOpts, poolOpts, cb);
   }
   connection = true;
   exports.db = db;

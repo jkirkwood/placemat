@@ -177,7 +177,7 @@ users.insert({
 
 API
 ---
-#### placemat.connect(connOptions, [poolOptions])
+#### placemat.connect(connOptions, [poolOptions, cb])
 Connect to your database using [node-any-db](https://github.com/grncdr/node-any-db)
 and return an instance of the connection.
 - `connOptions` - connection options to use. See any-db docs for more info.
