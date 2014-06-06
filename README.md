@@ -203,6 +203,8 @@ Add a new record to the table.
     postSave data
   - `ignoreGetters` - set to `true` if getters should not be applied to
     postSave data.
+  - `conn` - db connection to use for query. By default normal normal placemat
+    connection will be used. Useful for implementing transactions.
 - `cb` - callback of the form `cb(err, data)`
   - `data` - Data that was inserted into the database. Primary key of inserted
     row will be included (based on lastInsertId of query). Getters are applied
@@ -221,16 +223,21 @@ Update record(s) in the table.
     postSave data
   - `ignoreGetters` - set to `true` if getters should not be applied to
     postSave data.
+  - `conn` - db connection to use for query. By default normal normal placemat
+    connection will be used. Useful for implementing transactions.
 - `cb` - callback of the form `cb(err, data, affectedRows)`
   - `data` - data that was updated for the selected row(s). Getters are applied
     to this data.
   - `affectedRows` - the number of database rows that were updated.
 
-#### Table#remove(ids, cb)
+#### Table#remove(ids, [options], cb)
 Delete record(s) from the table.
 - `ids` - id(s) of row(s) to delete. Can be a single value, or an array of
   several values to delete multiple items. Like in `#update()` this parameter
   can also be a single object.
+- `options` - object containing options, all of which are optional.
+  - `conn` - db connection to use for query. By default normal normal placemat
+    connection will be used. Useful for implementing transactions.
 - `cb` - callback of the form `cb(err, affectedRows)`
   - `affectedRows` - the number of database rows that were deleted.
 
@@ -258,6 +265,8 @@ Retrieve row(s) from the table by id.
     retrieved fields.
   - `ignoreGetters` - set to `true` if getters should not be applied to
     retrieved fields.
+  - `conn` - db connection to use for query. By default normal normal placemat
+    connection will be used. Useful for implementing transactions.
 - `cb` - callback of the form `cb(err, record)`
   - `records` - if `ids` is an array, this value will be an array of objects
     (one for each row retrieved). If only a single id was specified in a
@@ -278,6 +287,8 @@ Find table rows using a raw sql query. Useful for more advanced operations.
     retrieved fields.
   - `ignoreGetters` - set to `true` if getters should not be applied to
     retrieved fields.
+  - `conn` - db connection to use for query. By default normal normal placemat
+    connection will be used. Useful for implementing transactions.
 - `cb` - callback of the form `cb(err, records)`
   - `records` - array containing each row that was found.
 
