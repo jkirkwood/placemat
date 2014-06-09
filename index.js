@@ -1,6 +1,5 @@
 var EventEmitter = require("events").EventEmitter
   , util = require("util")
-  , anyDb = require('any-db')
   , squel = require('squel')
   , stride = require('stride')
   , revalidator = require('revalidator')
@@ -17,24 +16,6 @@ squel.registerValueHandler(Date, function(date) {
     ('00' + date.getUTCMinutes()).slice(-2) + ':' +
     ('00' + date.getUTCSeconds()).slice(-2);
 });
-
-var db = null
-  , connection = false;
-
-exports.connect = function(connOpts, poolOpts, cb) {
-  if (!poolOpts) {
-    db = anyDb.createConnection(connOpts, cb);
-  }
-  else {
-    db = anyDb.createPool(connOpts, poolOpts, cb);
-  }
-  connection = true;
-  exports.db = db;
-  return db;
-};
-
-exports.db = db;
-
 
 var Table = exports.Table = function(tableName, idField, schema) {
   // Reorg args
@@ -160,20 +141,18 @@ Table.prototype._applyGetters = function _applyGetters(data, options) {
   }
 };
 
-Table.prototype.insert = function insert(data, options, cb) {
+Table.prototype.insert = function insert(connection, data, options, cb) {
   var self = this
     , meta = {};
 
-  if (!connection) {
-    return cb(new PlacematError("Must open connection before calling insert()."));
+  if (!connection || typeof connection.query !== 'function') {
+    return cb(new PlacematError("Connection object must have query function."));
   }
 
   if (!cb) {
     cb = options;
     options = {};
   }
-
-  var conn = options.conn || db;
 
   stride(
     function defaults() {
@@ -202,10 +181,10 @@ Table.prototype.insert = function insert(data, options, cb) {
 
       sql = sql.toParam();
 
-      conn.query(sql.text, sql.values, this);
+      connection.query(sql.text, sql.values, this);
     },
-    function getters(result) {
-      data[self.idField] = result.lastInsertId;
+    function getters(rows) {
+      data[self.idField] = rows.insertId;
       self._applyGetters(data, options);
       return true;
     },
@@ -220,21 +199,19 @@ Table.prototype.insert = function insert(data, options, cb) {
   });
 };
 
-Table.prototype.update = function update(ids, data, options, cb) {
+Table.prototype.update = function update(connection, ids, data, options, cb) {
   var self = this
     , idIsObject = false
     , meta = {};
 
-  if (!connection) {
-    return cb(new PlacematError("Must open connection before calling update()."));
+  if (!connection || typeof connection.query !== 'function') {
+    return cb(new PlacematError("Connection object must have query function."));
   }
 
   if (!cb) {
     cb = options;
     options = {};
   }
-
-  var conn = options.conn || db;
 
   // If there are no ids, do nothing
   if (ids == null || (Array.isArray(ids) && !ids.length)) {
@@ -288,11 +265,11 @@ Table.prototype.update = function update(ids, data, options, cb) {
 
       sql = sql.toParam();
 
-      conn.query(sql.text, sql.values, this);
+      connection.query(sql.text, sql.values, this);
     },
-    function getters(results) {
+    function getters(rows) {
       self._applyGetters(data, options);
-      return results.affectedRows;
+      return rows.affectedRows;
     },
     function postSave(affectedRows) {
       self.postSave(ids, data, false, meta);
@@ -306,22 +283,20 @@ Table.prototype.update = function update(ids, data, options, cb) {
 
 };
 
-Table.prototype.remove = function remove(ids, options, cb) {
+Table.prototype.remove = function remove(connection, ids, options, cb) {
   var self = this
     , idIsObject = false
     , whereSpecified = false
     , meta = {};
 
-  if (!connection) {
-    return cb(new PlacematError("Must open connection before calling remove()."));
+  if (!connection || typeof connection.query !== 'function') {
+    return cb(new PlacematError("Connection object must have query function."));
   }
 
   if (!cb) {
     cb = options;
     options = {};
   }
-
-  var conn = options.conn || db;
 
   // If there are no ids, do nothing
   if (ids == null || (Array.isArray(ids) && !ids.length)) {
@@ -363,7 +338,7 @@ Table.prototype.remove = function remove(ids, options, cb) {
 
       sql = sql.toParam();
 
-      conn.query(sql.text, sql.values, this);
+      connection.query(sql.text, sql.values, this);
     },
     function postDelete(results) {
       self.postDelete(ids, meta);
@@ -375,7 +350,7 @@ Table.prototype.remove = function remove(ids, options, cb) {
   });
 };
 
-Table.prototype.findById = function findById(ids, options, cb) {
+Table.prototype.findById = function findById(connection, ids, options, cb) {
   var self = this
     , idIsObject = false
     , returnArray = Array.isArray(ids);
@@ -421,7 +396,7 @@ Table.prototype.findById = function findById(ids, options, cb) {
     options.params = options.params.concat(ids);
   }
 
-  this.find(options, function(err, results) {
+  this.find(connection, options, function(err, results) {
     if (err) {
       return cb(err, results);
     }
@@ -439,12 +414,12 @@ Table.prototype.findById = function findById(ids, options, cb) {
   });
 };
 
-Table.prototype.find = function find(options, cb) {
+Table.prototype.find = function find(connection, options, cb) {
   var self = this
     , i;
 
-  if (!connection) {
-    return cb(new PlacematError("Must open connection before calling findMany()."));
+  if (!connection || typeof connection.query !== 'function') {
+    return cb(new PlacematError("Connection object must have query function."));
   }
 
   if (cb === undefined) {
@@ -494,37 +469,32 @@ Table.prototype.find = function find(options, cb) {
   if (options.offset) {
     sql.offset(options.offset);
   }
-  this.query(sql.toString(), options.params, options, cb);
+  this.query(connection, sql.toString(), options.params, options, cb);
 };
 
-Table.prototype.query = function query(sql, params, options, cb) {
-  var self = this
-    , data;
-
-  if (!connection) {
-    return cb(new PlacematError("Must open connection before calling query()."));
-  }
+Table.prototype.query = function query(connection, sql, params, options, cb) {
+  var self = this;
 
   // Reorg args
-  if (arguments.length === 2) {
+  if (arguments.length === 3) {
     cb = params;
     params = undefined;
     options = {};
   }
-  else if (arguments.length === 3) {
+  else if (arguments.length === 4) {
     cb = options;
     options = {};
   }
 
-  var conn = options.conn || db;
+  if (!connection || typeof connection.query !== 'function') {
+    return cb(new PlacematError("Connection object must have query function."));
+  }
 
   stride(
     function runQuery() {
-      conn.query(sql, params || [], this);
+      connection.query(sql, params || [], this);
     },
-    function getters(results) {
-      data = results.rows;
-
+    function getters(data) {
       if (!data.length) {
         return [];
       }

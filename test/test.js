@@ -1,6 +1,7 @@
 /*global describe, it, before, after */
 
-var placemat = require('..');
+var mysql = require('mysql')
+  , placemat = require('..');
 
 require('should');
 
@@ -90,26 +91,20 @@ var partsSchema = {
 var users = new placemat.Table('placemat_users', userSchema);
 var parts = new placemat.Table('placemat_parts', 'serialNumber', partsSchema);
 
-describe('Placemat', function() {
+var db;
 
-  var db;
+describe('Placemat', function() {
 
   // Create MySQL table for tests
   before(function(done) {
-    var connOpts = {
-      adapter: 'mysql',
+    db = mysql.createConnection({
       host: 'localhost',
       port: 3306,
       user: 'test',
       database: 'test'
-    };
+    });
 
-    var poolOpts = {
-      min: 2,
-      max: 20
-    };
-
-    db = placemat.connect(connOpts, poolOpts);
+    db.connect();
     done();
   });
 
@@ -173,14 +168,14 @@ describe('Placemat', function() {
 
   describe('exports.db', function() {
     it('should not be null after connection is established', function(done) {
-      placemat.db.should.not.equal(null);
+      db.should.not.equal(null);
       done();
     });
   });
 
   describe('#findById()', function() {
     it('should be able to retrieve a single record by id', function(done) {
-      users.findById(1, function(err, res) {
+      users.findById(db, 1, function(err, res) {
         if (err) {
           return done(err);
         }
@@ -190,7 +185,7 @@ describe('Placemat', function() {
     });
 
     it('should return "null" when no matching record is found', function(done) {
-      users.findById(2342, function(err, res) {
+      users.findById(db, 2342, function(err, res) {
         if (err) {
           return done(err);
         }
@@ -200,7 +195,7 @@ describe('Placemat', function() {
     });
 
     it('should return empty array when empty array is specified for ids', function(done) {
-      users.findById([], function(err, res) {
+      users.findById(db, [], function(err, res) {
         if (err) {
           return done(err);
         }
@@ -210,7 +205,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to retrieve multiple records by id', function(done) {
-      users.findById([1, 2], function(err, res) {
+      users.findById(db, [1, 2], function(err, res) {
         if (err) {
           return done(err);
         }
@@ -222,7 +217,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to retrieve a record by a field other than "id"', function(done) {
-      users.findById({email: 'james@example.com'}, function(err, res) {
+      users.findById(db, {email: 'james@example.com'}, function(err, res) {
         if (err) {
           return done(err);
         }
@@ -232,7 +227,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to work with options, but no idField parameter', function(done) {
-      users.findById(1, {fields: ['id', 'name']}, function(err, res) {
+      users.findById(db, 1, {fields: ['id', 'name']}, function(err, res) {
         if (err) {
           return done(err);
         }
@@ -244,7 +239,7 @@ describe('Placemat', function() {
 
   describe('#find()', function() {
     it('should return all records with no options', function(done) {
-      users.find(function(err, res) {
+      users.find(db, function(err, res) {
         if (err) {
           return done(err);
         }
@@ -254,7 +249,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to use a where clause', function(done) {
-      users.find({
+      users.find(db, {
         where:'name = "Jake"'
       }, function(err, res) {
         if (err) {
@@ -267,7 +262,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to use multiple where clauses', function(done) {
-      users.find({
+      users.find(db, {
         where:['name = "Jake"', 'email = "jake2@example.com"']
       }, function(err, res) {
         if (err) {
@@ -281,7 +276,7 @@ describe('Placemat', function() {
     });
 
     it('should accept where clause parameters', function(done) {
-      users.find({
+      users.find(db, {
         where: 'name = ?',
         params: ['James']
       }, function(err, res) {
@@ -295,7 +290,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to return a single field', function(done) {
-      users.find({
+      users.find(db, {
         fields: 'name'
       }, function(err, res) {
         if (err) {
@@ -307,7 +302,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to return multiple fields', function(done) {
-      users.find({
+      users.find(db, {
         fields: ['name', 'email']
       }, function(err, res) {
         if (err) {
@@ -319,7 +314,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to assign an alias to fields', function(done) {
-      users.find({
+      users.find(db, {
         fields: ['name', {field: 'email', alias: 'emailAddress'}],
       }, function(err, res) {
         if (err) {
@@ -331,7 +326,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to apply sorting', function(done) {
-      users.find({
+      users.find(db, {
         order: 'name'
       }, function(err, res) {
         if (err) {
@@ -347,7 +342,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to apply descending sorting', function(done) {
-      users.find({
+      users.find(db, {
         order: {field: 'name', ascending: false}
       }, function(err, res) {
         if (err) {
@@ -365,7 +360,7 @@ describe('Placemat', function() {
 
   describe('#query()', function() {
     it('should execute queries successfully', function(done) {
-      users.query("SELECT * FROM placemat_users", function(err, res) {
+      users.query(db, "SELECT * FROM placemat_users", function(err, res) {
         if (err) {
           return done(err);
         }
@@ -375,7 +370,7 @@ describe('Placemat', function() {
     });
 
     it('should apply parameters', function(done) {
-      users.query("SELECT * FROM placemat_users WHERE email = ?",
+      users.query(db, "SELECT * FROM placemat_users WHERE email = ?",
         ['james@example.com'], function(err, res)
       {
         if (err) {
@@ -388,7 +383,7 @@ describe('Placemat', function() {
     });
 
     it('should apply getters', function(done) {
-      users.query("SELECT * FROM placemat_users", function(err, res) {
+      users.query(db, "SELECT * FROM placemat_users", function(err, res) {
         if (err) {
           return done(err);
         }
@@ -398,7 +393,7 @@ describe('Placemat', function() {
     });
 
     it('should honor ignoreGetters option', function(done) {
-      users.query("SELECT * FROM placemat_users", null, {ignoreGetters: true},
+      users.query(db, "SELECT * FROM placemat_users", null, {ignoreGetters: true},
         function(err, res) {
           if (err) {
             return done(err);
@@ -409,7 +404,7 @@ describe('Placemat', function() {
       });
 
     it('should remove "private" fields from results', function(done) {
-      users.query("SELECT * FROM placemat_users", function(err, res) {
+      users.query(db, "SELECT * FROM placemat_users", function(err, res) {
         if (err) {
           return done(err);
         }
@@ -419,7 +414,7 @@ describe('Placemat', function() {
     });
 
     it('should honor ignorePrivate option', function(done) {
-      users.query("SELECT * FROM placemat_users", null, {ignorePrivate: true},
+      users.query(db, "SELECT * FROM placemat_users", null, {ignorePrivate: true},
         function(err, res) {
           if (err) {
             return done(err);
@@ -430,7 +425,7 @@ describe('Placemat', function() {
       });
 
     it('should be able to retrieve only some fields without problems', function(done) {
-      users.query("SELECT name FROM placemat_users", function(err, res) {
+      users.query(db, "SELECT name FROM placemat_users", function(err, res) {
         if (err) {
           return done(err);
         }
@@ -444,14 +439,14 @@ describe('Placemat', function() {
 
   describe('#update()', function() {
     it('should successfully save data when required field is not provided', function(done) {
-      users.update(1, {
+      users.update(db, 1, {
         email: 'james123@example.com'
       }, function(err, res, affectedRows) {
         if (err) {
           return done(err);
         }
         affectedRows.should.equal(1);
-        users.findById(1, function(err, user) {
+        users.findById(db, 1, function(err, user) {
           if (err) {
             return done(err);
           }
@@ -470,14 +465,14 @@ describe('Placemat', function() {
       users.once('update', function() {
         updateCalled = true;
       });
-      users.update(1, {
+      users.update(db, 1, {
         email: 'james123@example.com'
       }, function(err, res, affectedRows) {
         if (err) {
           return done(err);
         }
         affectedRows.should.equal(1);
-        users.findById(1, function(err, user) {
+        users.findById(db, 1, function(err, user) {
           if (err) {
             return done(err);
           }
@@ -490,7 +485,7 @@ describe('Placemat', function() {
     });
 
     it('should not crash if data is null', function(done) {
-      users.update(1, null, done);
+      users.update(db, 1, null, done);
     });
 
     it('should apply getters to returned/postSave data', function(done) {
@@ -499,7 +494,7 @@ describe('Placemat', function() {
         data.should.not.have.property('password');
         data.should.have.property('email', 'james24523@example.com');
       });
-      users.update(1, {
+      users.update(db, 1, {
         email: 'james24523@example.com',
         password: '123456ab',
         createdAt: new Date()
@@ -515,7 +510,7 @@ describe('Placemat', function() {
     });
 
     it('should honor ignoreGetters, and ignorePrivate option', function(done) {
-      users.update(1, {
+      users.update(db, 1, {
         email: 'james24523@example.com',
         password: '123456ab',
         createdAt: new Date()
@@ -535,14 +530,14 @@ describe('Placemat', function() {
 
 
     it('should be able to update multiple rows simultaneously', function(done) {
-      users.update([1, 2], {
+      users.update(db, [1, 2], {
         name: 'Bob'
       }, function(err, res, affectedRows) {
         if (err) {
           return done(err);
         }
         affectedRows.should.equal(2);
-        users.findById([1, 2], function(err, users) {
+        users.findById(db, [1, 2], function(err, users) {
           if (err) {
             return done(err);
           }
@@ -554,7 +549,7 @@ describe('Placemat', function() {
     });
 
     it('should throw an error when a required field is cleared', function(done) {
-      users.update(1, {
+      users.update(db, 1, {
         email: undefined
       }, function(err, res, affectedRows) {
         err.fields[0].name.should.equal('email');
@@ -563,7 +558,7 @@ describe('Placemat', function() {
     });
 
     it('should fail when a unrecognized field is provided', function(done) {
-      users.update(1, {
+      users.update(db, 1, {
         junk: 'this is garbage'
       }, function(err, res) {
         err.fields[0].name.should.equal('junk');
@@ -572,7 +567,7 @@ describe('Placemat', function() {
     });
 
     it('should fail when invalid data is provided', function(done) {
-      users.update(1, {
+      users.update(db, 1, {
         email: 'james'
       }, function(err, res) {
         err.fields[0].name.should.equal('email');
@@ -581,13 +576,13 @@ describe('Placemat', function() {
     });
 
     it('should apply setters before data is saved', function(done) {
-      users.update(1, {
+      users.update(db, 1, {
         email: 'BOB456@example.com'
       }, function(err, res) {
         if (err) {
           return done(err);
         }
-        users.findById(1, function(err, user) {
+        users.findById(db, 1, function(err, user) {
           if (err) {
             return done(err);
           }
@@ -598,13 +593,13 @@ describe('Placemat', function() {
     });
 
     it('should be able to "null" unrequired fields by setting them to "undefined"', function(done) {
-      users.update(1, {
+      users.update(db, 1, {
         age: undefined
       }, function(err, res) {
         if (err) {
           return done(err);
         }
-        users.findById(1, function(err, user) {
+        users.findById(db, 1, function(err, user) {
           if (err) {
             return done(err);
           }
@@ -615,7 +610,7 @@ describe('Placemat', function() {
     });
 
     it('should be able to be called with no data properties', function(done) {
-      users.update(1, {}, function(err, res) {
+      users.update(db, 1, {}, function(err, res) {
         if (err) {
           return done(err);
         }
@@ -624,7 +619,7 @@ describe('Placemat', function() {
     });
 
     it('should not crash if ids is empty array', function(done) {
-      users.update([], {name: 'Bob'}, done);
+      users.update(db, [], {name: 'Bob'}, done);
     });
 
   });
@@ -632,9 +627,9 @@ describe('Placemat', function() {
   describe('#remove()', function() {
 
     it('should throw a ContraintError when deleting referenced row', function(done) {
-      users.remove(1, function(err, res) {
+      users.remove(db, 1, function(err, res) {
         err.should.be.an.instanceof(placemat.ConstraintError);
-        parts.remove([1, 2, 3], done);
+        parts.remove(db, [1, 2, 3], done);
       });
     });
 
@@ -643,11 +638,11 @@ describe('Placemat', function() {
       users.once('remove', function() {
         removeCalled = true;
       });
-      users.remove(1, function(err, res) {
+      users.remove(db, 1, function(err, res) {
         if (err) {
           return done(err);
         }
-        users.query("SELECT * FROM placemat_users", function(err, res) {
+        users.query(db, "SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -660,11 +655,11 @@ describe('Placemat', function() {
     });
 
     it('should be able to remove multiple rows', function(done) {
-      users.remove([2, 3], function(err, res) {
+      users.remove(db, [2, 3], function(err, res) {
         if (err) {
           return done(err);
         }
-        users.findById([2, 3], function(err, res) {
+        users.findById(db, [2, 3], function(err, res) {
           if (err) {
             return done(err);
           }
@@ -675,11 +670,11 @@ describe('Placemat', function() {
     });
 
     it('should be able to remove row by field other than id', function(done) {
-      users.remove({email: 'jake2@example.com'}, function(err, res) {
+      users.remove(db, {email: 'jake2@example.com'}, function(err, res) {
         if (err) {
           return done(err);
         }
-        users.query("SELECT * FROM placemat_users", function(err, res) {
+        users.query(db, "SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -690,7 +685,7 @@ describe('Placemat', function() {
     });
 
     it('should not crash if ids is empty array', function(done) {
-      users.remove([], done);
+      users.remove(db, [], done);
     });
   });
 
@@ -704,7 +699,7 @@ describe('Placemat', function() {
       users.once('insert', function() {
         insertCalled = true;
       });
-      users.insert({
+      users.insert(db, {
         name: 'James',
         email: 'james@example.com',
         password: '123456ab',
@@ -714,11 +709,11 @@ describe('Placemat', function() {
           return done(err);
         }
         res.should.have.property('id');
-        users.findById(res.id, function(err, user) {
+        users.findById(db, res.id, function(err, user) {
           user.should.have.property('name', 'James');
           saveCalled.should.equal(true);
           insertCalled.should.equal(true);
-          users.remove(res.id, done);
+          users.remove(db, res.id, done);
         });
       });
     });
@@ -728,7 +723,7 @@ describe('Placemat', function() {
         data.should.have.property('createdAt', '***');
         data.should.not.have.property('password');
       });
-      users.insert({
+      users.insert(db, {
         name: 'James',
         email: 'james24523@example.com',
         password: '123456ab',
@@ -741,17 +736,17 @@ describe('Placemat', function() {
         res.should.have.property('email', 'james24523@example.com');
         res.should.have.property('createdAt', '***');
         res.should.not.have.property('password');
-        users.remove(res.id, done);
+        users.remove(db, res.id, done);
       });
     });
 
     it('should fail when a required field is undefined', function(done) {
-      users.insert({
+      users.insert(db, {
         name: 'James',
         password: '123456ab'
       }, function(err, res) {
         err.fields[0].name.should.equal('email');
-        users.query("SELECT * FROM placemat_users", function(err, res) {
+        users.query(db, "SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -762,14 +757,14 @@ describe('Placemat', function() {
     });
 
     it('should fail when a unrecognized field is provided', function(done) {
-      users.insert({
+      users.insert(db, {
         name: 'James',
         email: 'jamesk1187@gmail.com',
         junk: 'this is garbage',
         password: '123456ab'
       }, function(err, res) {
         err.fields[0].name.should.equal('junk');
-        users.query("SELECT * FROM placemat_users", function(err, res) {
+        users.query(db, "SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -780,13 +775,13 @@ describe('Placemat', function() {
     });
 
     it('should fail when invalid data is provided', function(done) {
-      users.insert({
+      users.insert(db, {
         name: 'James',
         email: 'jamesk1187',
         password: '123456ab'
       }, function(err, res) {
         err.fields[0].name.should.equal('email');
-        users.query("SELECT * FROM placemat_users", function(err, res) {
+        users.query(db, "SELECT * FROM placemat_users", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -797,7 +792,7 @@ describe('Placemat', function() {
     });
 
     it('should apply setters before data is saved', function(done) {
-      users.insert({
+      users.insert(db, {
         name: '   James   ',
         email: 'JamesK1187@gmail.com',
         password: '123456ab'
@@ -805,7 +800,7 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        users.findById(res.id, function(err, user) {
+        users.findById(db, res.id, function(err, user) {
           user.name.should.equal('James');
           user.email.should.equal('jamesk1187@gmail.com');
           done();
@@ -820,14 +815,14 @@ describe('Placemat', function() {
         users.preSave = function preSave(ids, data, isNew, cb) {cb();};
         cb();
       };
-      users.insert({
+      users.insert(db, {
         email: 'jamesk1187@gmail.com',
         password: '123456ab'
       }, function(err, res) {
         if (err) {
           return done(err);
         }
-        users.findById(res.id, function(err, user) {
+        users.findById(db, res.id, function(err, user) {
           user.should.have.property('name', 'John Doe');
           done();
         });
@@ -835,14 +830,14 @@ describe('Placemat', function() {
     });
 
     it('should throw validation error when foreign key doesn\'t exist', function(done) {
-      parts.insert({
+      parts.insert(db, {
         serialNumber: 1,
         name: 'widget',
         userId: 1000
       }, function(err, res) {
         err.should.be.an.instanceof(placemat.ValidationError);
         err.fields[0].name.should.equal('userId');
-        parts.query("SELECT * FROM placemat_parts", function(err, res) {
+        parts.query(db, "SELECT * FROM placemat_parts", function(err, res) {
           if (err) {
             return done(err);
           }
@@ -853,7 +848,7 @@ describe('Placemat', function() {
     });
 
     it('should throw validation error when duplicate key is inserted', function(done) {
-      parts.insert({
+      parts.insert(db, {
         serialNumber: 1,
         name: 'widget',
         userId: 8
@@ -861,7 +856,7 @@ describe('Placemat', function() {
         if (err) {
           return done(err);
         }
-        parts.insert({
+        parts.insert(db, {
           serialNumber: 1,
           name: 'widget',
           userId: 8

@@ -5,6 +5,13 @@ A lightweight module designed to make interacting with your SQL tables a little
 easier. Includes features such as validation, getters, setters, pre/post-save
 hooks.
 
+New in v0.11.0
+--------------
+Placemat no longer utilizes node-any-db. Database connections must be created in
+your code and passed as an argument to the placemat functions. This was done
+to provide more flexibility with regard to how connections are used (for
+transactions, etc).
+
 Why?
 ----
 
@@ -20,38 +27,11 @@ npm install placement
 
 Usage
 -----
-First thing to do is to require placemat and to open a connection to your
-database. Placemat uses [node-any-db](https://github.com/grncdr/node-any-db) to
-establish a connection to the db of your choosing (Note: this module has only
-been tested with MySQL. It may, or may not, work with other db varieties).
-
+Placemat is designed to work with the database connection objects instantiated by
+the [node mysql module](https://github.com/felixge/node-mysql) module. The first
+step is to opena connection to your database. Once this is done, the placemat
+functions can be used by passing a connection as the first argument.
 Use `placemat.connect(connOpts, poolOpts)`
-
-See the [node-any-db docs](https://github.com/grncdr/node-any-db) for a list of
-available options. As far as placemat is concerned, if poolOpts is specified
-a connection pool is opened via `anyDB.createPool`. Otherwise only a single
-connection is opened via `anyDB.createConnection`.
-
-
-
-```js
-var placemat = require('placemat');
-
-var connOpts = {
-  adapter: 'mysql',
-  host: 'localhost',
-  port: 3306,
-  user: 'user',
-  database: 'database'
-};
-
-var poolOpts = {
-  min: 2,
-  max: 20
-};
-
-placemat.connect(connOpts, poolOpts);
-```
 
 ### Schema
 
@@ -147,10 +127,19 @@ var userSchema = {
 Now let's instantiate the table and make some stuff happen.
 
 ```js
+var mysql = require('mysql');
+
+var db = mysql.createConnection({
+  host: 'localhost',
+  port: 3306,
+  user: 'test',
+  database: 'test'
+});
+
 var users = new placemat.Table('users', userSchema);
 
 // Create a new user
-users.insert({
+users.insert(db, {
   name: 'Bob',
   email: 'bob@example.com',
   password: '123456'
@@ -159,16 +148,16 @@ users.insert({
   var id = data.id;
 
   // Update the new user's email address
-  users.update(id, {
+  users.update(db, id, {
     email: 'bob123@example.com'
     }, function(err, data, affectedRows) {
 
       // Fetch the user by id
-      users.findById(id, function(err, user) {
+      users.findById(db, id, function(err, user) {
         var name = user.name;
 
         // Delete the user
-        users.remove(id, function(err, affectedRows) {});
+        users.remove(db, id, function(err, affectedRows) {});
       });
 
     }
@@ -177,16 +166,6 @@ users.insert({
 
 API
 ---
-#### placemat.connect(connOptions, [poolOptions, cb])
-Connect to your database using [node-any-db](https://github.com/grncdr/node-any-db)
-and return an instance of the connection.
-- `connOptions` - connection options to use. See any-db docs for more info.
-- `poolOptions` - pool options to use. See any-db docs for more info. If
-  undefined, only a single connection will be opened to the specified database.
-
-#### placemat.db
-A reference to the database connection established by `placemat.connect()`.
-
 #### placemat.Table(tableName, [idField], schema)
 Instantiate a new placemat table.
 - `tableName` - name of database table instance should interact with.
@@ -195,23 +174,23 @@ Instantiate a new placemat table.
 
 ### Table Methods
 
-#### Table#insert(data, [options], cb)
+#### Table#insert(connection, data, [options], cb)
 Add a new record to the table.
+- `connection` - database connection object to use for query.
 - `data` - object containing fields to save to the inserted row.
 - `options` - object containing options, all of which are optional. Can include:
   - `ignorePrivate` - set to `true` if private fields should not be removed from
     postSave data
   - `ignoreGetters` - set to `true` if getters should not be applied to
     postSave data.
-  - `conn` - db connection to use for query. By default normal normal placemat
-    connection will be used. Useful for implementing transactions.
 - `cb` - callback of the form `cb(err, data)`
   - `data` - Data that was inserted into the database. Primary key of inserted
     row will be included (based on lastInsertId of query). Getters are applied
     to this data.
 
-#### Table#update(ids, data, [options], cb)
+#### Table#update(connection, ids, data, [options], cb)
 Update record(s) in the table.
+- `connection` - database connection object to use for query.
 - `ids` - id(s) of row(s) to update. Can be a single value, or an array of
   several values to update multiple items. This value can also be a single object
   containing field/value pairs. This comes in handy when trying to update a row
@@ -223,26 +202,24 @@ Update record(s) in the table.
     postSave data
   - `ignoreGetters` - set to `true` if getters should not be applied to
     postSave data.
-  - `conn` - db connection to use for query. By default normal normal placemat
-    connection will be used. Useful for implementing transactions.
 - `cb` - callback of the form `cb(err, data, affectedRows)`
   - `data` - data that was updated for the selected row(s). Getters are applied
     to this data.
   - `affectedRows` - the number of database rows that were updated.
 
-#### Table#remove(ids, [options], cb)
+#### Table#remove(connection, ids, [options], cb)
 Delete record(s) from the table.
+- `connection` - database connection object to use for query.
 - `ids` - id(s) of row(s) to delete. Can be a single value, or an array of
   several values to delete multiple items. Like in `#update()` this parameter
   can also be a single object.
 - `options` - object containing options, all of which are optional.
-  - `conn` - db connection to use for query. By default normal normal placemat
-    connection will be used. Useful for implementing transactions.
 - `cb` - callback of the form `cb(err, affectedRows)`
   - `affectedRows` - the number of database rows that were deleted.
 
-#### Table#findById(ids, [options], cb)
+#### Table#findById(connection, ids, [options], cb)
 Retrieve row(s) from the table by id.
+- `connection` - database connection object to use for query.
 - `ids` - id(s) of row(s) to retrieve. Can be a single value, or an array of
   several values to retrieve multiple items. Like in `#update()` this parameter
   can also be a single object.
@@ -265,21 +242,21 @@ Retrieve row(s) from the table by id.
     retrieved fields.
   - `ignoreGetters` - set to `true` if getters should not be applied to
     retrieved fields.
-  - `conn` - db connection to use for query. By default normal normal placemat
-    connection will be used. Useful for implementing transactions.
 - `cb` - callback of the form `cb(err, record)`
   - `records` - if `ids` is an array, this value will be an array of objects
     (one for each row retrieved). If only a single id was specified in a
     non-array format, `records` will be an object, or `null`.
 
-#### Table#find([options], cb)
+#### Table#find(connection, [options], cb)
 Find table rows. By default all rows are retrieved.
+- `connection` - database connection object to use for query.
 - `options` - same as in `Table#findById()`.
 - `cb` - callback of the form `cb(err, records)`
   - `records` - array containing each row that was found.
 
-#### Table#query(sql, [params, options], cb)
+#### Table#query(connection, sql, [params, options], cb)
 Find table rows using a raw sql query. Useful for more advanced operations.
+- `connection` - database connection object to use for query.
 - `sql` - sql query to execute.
 - `params` - parameters to apply in query.
 - `options` - object containing options, all of which are optional. Can include:
@@ -287,8 +264,6 @@ Find table rows using a raw sql query. Useful for more advanced operations.
     retrieved fields.
   - `ignoreGetters` - set to `true` if getters should not be applied to
     retrieved fields.
-  - `conn` - db connection to use for query. By default normal normal placemat
-    connection will be used. Useful for implementing transactions.
 - `cb` - callback of the form `cb(err, records)`
   - `records` - array containing each row that was found.
 
