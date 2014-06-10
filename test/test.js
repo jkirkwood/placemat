@@ -592,23 +592,6 @@ describe('Placemat', function() {
       });
     });
 
-    it('should be able to "null" unrequired fields by setting them to "undefined"', function(done) {
-      users.update(db, 1, {
-        age: undefined
-      }, function(err, res) {
-        if (err) {
-          return done(err);
-        }
-        users.findById(db, 1, function(err, user) {
-          if (err) {
-            return done(err);
-          }
-          user.should.have.property('age', null);
-          done();
-        });
-      });
-    });
-
     it('should be able to be called with no data properties', function(done) {
       users.update(db, 1, {}, function(err, res) {
         if (err) {

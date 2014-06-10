@@ -250,7 +250,9 @@ Table.prototype.update = function update(connection, ids, data, options, cb) {
       var sql = squel.update().table(self.tableName);
 
       for(var field in data) {
-        sql.set(field, data[field]);
+        if (data[field] !== undefined) {
+          sql.set(field, data[field]);
+        }
       }
 
       if (idIsObject) {
