@@ -183,6 +183,8 @@ Add a new record to the table.
     postSave data
   - `ignoreGetters` - set to `true` if getters should not be applied to
     postSave data.
+  - `meta` - object where arbitrary data can be stored and be available in all
+    hooks and events for a particular action.
 - `cb` - callback of the form `cb(err, data)`
   - `data` - Data that was inserted into the database. Primary key of inserted
     row will be included (based on lastInsertId of query). Getters are applied
@@ -202,6 +204,8 @@ Update record(s) in the table.
     postSave data
   - `ignoreGetters` - set to `true` if getters should not be applied to
     postSave data.
+  - `meta` - object where arbitrary data can be stored and be available in all
+    hooks and events for a particular action.
 - `cb` - callback of the form `cb(err, data, affectedRows)`
   - `data` - data that was updated for the selected row(s). Getters are applied
     to this data.
@@ -214,6 +218,8 @@ Delete record(s) from the table.
   several values to delete multiple items. Like in `#update()` this parameter
   can also be a single object.
 - `options` - object containing options, all of which are optional.
+  - `meta` - object where arbitrary data can be stored and be available in all
+    hooks and events for a particular action.
 - `cb` - callback of the form `cb(err, affectedRows)`
   - `affectedRows` - the number of database rows that were deleted.
 
@@ -283,7 +289,7 @@ Called after defaults are applied but before validation occurs.
 - `cb` - should be called when hook is complete. An error can be passed to
   cause the save to fail.
 - `meta` - object where arbitrary data can be stored and be available in all
-  hooks for particular action.
+  hooks and events for a particular action.
 
 #### Table#preSave(ids, data, isNew, cb, meta)
 Called after setters and validation are applied, but before the actual db
@@ -296,7 +302,7 @@ query.
 - `cb` - should be called when hook is complete. An error can be passed to
   cause the save to fail.
 - `meta` - object where arbitrary data can be stored and be available in all
-  hooks for particular action.
+  hooks and events for a particular action.
 
 #### Table#postSave(ids, data, isNew, meta)
 Called after records have been successfully inserted or updated.
@@ -306,7 +312,7 @@ Called after records have been successfully inserted or updated.
 - `data` - data that was saved. Getters are applied to this data.
 - `isNew` - set to `true` when called during an insert.
 - `meta` - object where arbitrary data can be stored and be available in all
-  hooks for particular action.
+  hooks and events for a particular action.
 
 #### Table#preDelete(ids, cb, meta)
 Called before rows are deleted.
@@ -315,14 +321,14 @@ Called before rows are deleted.
 - `cb` - should be called when hook is complete. An error can be passed to
   cause the deletion to fail.
 - `meta` - object where arbitrary data can be stored and be available in all
-  hooks for particular action.
+  hooks and events for a particular action.
 
 #### Table#postDelete(ids, meta)
 Called after records have successfully been deleted.
 - `ids` - array containing the ids that were deleted. This will always be an
   array, even if a non-array id was passed to the emitting function.
 - `meta` - object where arbitrary data can be stored and be available in all
-  hooks for particular action.
+  hooks and events for a particular action.
 
 ### Table Events
 
@@ -335,6 +341,8 @@ Emitted whenever a record is inserted, or updated
   was passed to the emitting function.
 - `data` - data that was saved. Getters are applied to this data.
 - `isNew` - set to `true` when emitted during an insert.
+- `meta` - object where arbitrary data can be stored and be available in all
+  hooks and events for a particular action.
 
 #### Event 'insert'
 Emitted whenever a record is inserted
@@ -342,17 +350,23 @@ Emitted whenever a record is inserted
   array, even if a non-array id
   was passed to the emitting function.
 - `data` - data that was saved.
+- `meta` - object where arbitrary data can be stored and be available in all
+  hooks and events for a particular action.
 
 #### Event 'update'
 Emitted whenever a record is updated
 - `ids` - array containing the ids that were updated. This will always be an
   array, even if a non-array id was passed to the emitting function.
 - `data` - data that was updated. Getters are applied to this data.
+- `meta` - object where arbitrary data can be stored and be available in all
+  hooks and events for a particular action.
 
 #### Event 'remove'
 Emitted whenever a record is removed
 - `ids` - array containing the ids that were removed. This will always be an
   array, even if a non-array id was passed to the emitting function.
+- `meta` - object where arbitrary data can be stored and be available in all
+hooks and events for a particular action.
 
 
 ### Table Errors

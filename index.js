@@ -143,7 +143,7 @@ Table.prototype._applyGetters = function _applyGetters(data, options) {
 
 Table.prototype.insert = function insert(connection, data, options, cb) {
   var self = this
-    , meta = {};
+    , meta;
 
   if (!connection || typeof connection.query !== 'function') {
     return cb(new PlacematError("Connection object must have query function."));
@@ -153,6 +153,8 @@ Table.prototype.insert = function insert(connection, data, options, cb) {
     cb = options;
     options = {};
   }
+
+  meta = options.meta || {};
 
   stride(
     function defaults() {
@@ -190,8 +192,8 @@ Table.prototype.insert = function insert(connection, data, options, cb) {
     },
     function postSave() {
       self.postSave([data[self.idField]], data, true, meta);
-      self.emit('insert', [data[self.idField]], data);
-      self.emit('save', [data[self.idField]], data, true);
+      self.emit('insert', [data[self.idField]], data, meta);
+      self.emit('save', [data[self.idField]], data, true, meta);
       return true;
     }
   ).once('done', function(err) {
@@ -202,7 +204,7 @@ Table.prototype.insert = function insert(connection, data, options, cb) {
 Table.prototype.update = function update(connection, ids, data, options, cb) {
   var self = this
     , idIsObject = false
-    , meta = {};
+    , meta;
 
   if (!connection || typeof connection.query !== 'function') {
     return cb(new PlacematError("Connection object must have query function."));
@@ -212,6 +214,8 @@ Table.prototype.update = function update(connection, ids, data, options, cb) {
     cb = options;
     options = {};
   }
+
+  meta = options.meta || {};
 
   // If there are no ids, do nothing
   if (ids == null || (Array.isArray(ids) && !ids.length)) {
@@ -275,8 +279,8 @@ Table.prototype.update = function update(connection, ids, data, options, cb) {
     },
     function postSave(affectedRows) {
       self.postSave(ids, data, false, meta);
-      self.emit('update', ids, data);
-      self.emit('save', ids, data, false);
+      self.emit('update', ids, data, meta);
+      self.emit('save', ids, data, false, meta);
       return affectedRows;
     }
   ).once('done', function(err, affectedRows) {
@@ -289,7 +293,7 @@ Table.prototype.remove = function remove(connection, ids, options, cb) {
   var self = this
     , idIsObject = false
     , whereSpecified = false
-    , meta = {};
+    , meta;
 
   if (!connection || typeof connection.query !== 'function') {
     return cb(new PlacematError("Connection object must have query function."));
@@ -299,6 +303,8 @@ Table.prototype.remove = function remove(connection, ids, options, cb) {
     cb = options;
     options = {};
   }
+
+  meta = options.meta || {};
 
   // If there are no ids, do nothing
   if (ids == null || (Array.isArray(ids) && !ids.length)) {
@@ -344,7 +350,7 @@ Table.prototype.remove = function remove(connection, ids, options, cb) {
     },
     function postDelete(results) {
       self.postDelete(ids, meta);
-      self.emit('remove', ids);
+      self.emit('remove', ids, meta);
       return results.affectedRows;
     }
   ).once('done', function(err, affectedRows) {
