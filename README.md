@@ -63,6 +63,7 @@ following properties:
     this value.
   - `private` - if `true`, this field will be removed from retrieved data.
     Useful for passwords and other sensitive information.
+  - `quote` - if `true` field name will be surrounded in '`' for all queries.
 
 Schema Example:
 
@@ -166,11 +167,13 @@ users.insert(db, {
 
 API
 ---
-#### placemat.Table(tableName, [idField], schema)
+#### placemat.Table(tableName, [idField], schema, [options])
 Instantiate a new placemat table.
 - `tableName` - name of database table instance should interact with.
 - `idField` - primary key of table. Defaults to `id`.
 - `schema` - [schema object](#schema) for the table.
+- `options` - object containing table options. Can be:
+  - `quoteTableName` - if true table name will be surrounded by '`' for queries.
 
 ### Table Methods
 

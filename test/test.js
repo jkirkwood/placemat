@@ -60,6 +60,13 @@ var userSchema = {
         return value.trim().toLowerCase();
       },
       private: true
+    },
+    separator: {
+      validation: {
+        type: ['string'],
+        required: false
+      },
+      quote: true
     }
   }
 };
@@ -124,6 +131,7 @@ describe('Placemat', function() {
       "`email` varchar(255) NOT NULL DEFAULT '', " +
       "`createdAt` datetime NOT NULL, " +
       "`password` varchar(255) NOT NULL DEFAULT '', " +
+      "`separator` varchar(255) NOT NULL DEFAULT '.', " +
       "PRIMARY KEY (`id`) " +
     ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
     db.query(sql, done);
@@ -353,6 +361,29 @@ describe('Placemat', function() {
         res[1].should.have.property('name', 'James');
         res[2].should.have.property('name', 'Jake');
         res[3].should.have.property('name', 'Jake');
+        done();
+      });
+    });
+
+    it('should accept SQL functions as field parameter', function(done) {
+      users.find(db, {
+        fields: '*'
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        done();
+      });
+    });
+
+    it('should be able to retrieve field with reserved name when `quote` option is set', function(done) {
+      users.find(db, {
+        fields: 'separator'
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        res[0].should.have.keys(['separator']);
         done();
       });
     });
@@ -603,6 +634,23 @@ describe('Placemat', function() {
 
     it('should not crash if ids is empty array', function(done) {
       users.update(db, [], {name: 'Bob'}, done);
+    });
+
+    it('should be able to update field with reserved name when `quote` option is set', function(done) {
+      users.update(db, 1, {
+        separator: '@'
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        users.findById(db, 1, function(err, user) {
+          if (err) {
+            return done(err);
+          }
+          user.should.have.property('separator', '@');
+          done();
+        });
+      });
     });
 
   });

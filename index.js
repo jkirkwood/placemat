@@ -17,18 +17,25 @@ squel.registerValueHandler(Date, function(date) {
     ('00' + date.getUTCSeconds()).slice(-2);
 });
 
-var Table = exports.Table = function(tableName, idField, schema) {
+var Table = exports.Table = function(tableName, idField, schema, options) {
   // Reorg args
   if (schema === undefined) {
     schema = idField;
+    options = schema;
     idField = 'id';
   }
+
+  options = options || {};
 
   EventEmitter.call(this);
 
   this.tableName = tableName;
   this.schema = schema;
   this.idField = idField;
+  this.options = options;
+
+  this._queryTableName = options.quoteTableName ? '`' + this.tableName + '`' :
+    this.tableName;
 
   this.fieldNames = Object.keys(schema.fields);
 
@@ -175,13 +182,13 @@ Table.prototype.insert = function insert(connection, data, options, cb) {
       self.preSave(null, data, true, this, meta);
     },
     function save() {
-      var sql = squel.insert({
-        autoQuoteTableNames: true,
-        autoQuoteFieldNames: true
-      }).into(self.tableName);
+      var sql = squel.insert().into(self._queryTableName)
+        , fieldName;
 
       for(var field in data) {
-        sql.set(field, data[field]);
+        fieldName = self.schema.fields[field] && self.schema.fields[field].quote ?
+          '`' + field + '`' : field;
+        sql.set(fieldName, data[field]);
       }
 
       sql = sql.toParam();
@@ -254,14 +261,14 @@ Table.prototype.update = function update(connection, ids, data, options, cb) {
       self.preSave(ids, data, false, this, meta);
     },
     function save() {
-      var sql = squel.update({
-        autoQuoteTableNames: true,
-        autoQuoteFieldNames: true
-      }).table(self.tableName);
+      var sql = squel.update().table(self._queryTableName)
+        , fieldName;
 
       for(var field in data) {
         if (data[field] !== undefined) {
-          sql.set(field, data[field]);
+          fieldName = self.schema.fields[field] && self.schema.fields[field].quote ?
+            '`' + field + '`' : field;
+          sql.set(fieldName, data[field]);
         }
       }
 
@@ -331,10 +338,7 @@ Table.prototype.remove = function remove(connection, ids, options, cb) {
       self.preDelete(ids, this, meta);
     },
     function remove() {
-      var sql = squel.delete({
-        autoQuoteTableNames: true,
-        autoQuoteFieldNames: true
-      }).from(self.tableName);
+      var sql = squel.delete().from(self._queryTableName);
 
       if (idIsObject) {
         for (var i in ids) {
@@ -454,17 +458,19 @@ Table.prototype.find = function find(connection, options, cb) {
   options.order = options.order || [];
   options.order = Array.isArray(options.order) ? options.order : [options.order];
 
-  var sql = squel.select({
-    autoQuoteTableNames: true,
-    autoQuoteFieldNames: true
-  }).from(self.tableName);
+  var sql = squel.select().from(self._queryTableName)
+    , fieldName;
 
   for (i = 0; i < options.fields.length; i++) {
     if (typeof options.fields[i] === 'object') {
-      sql.field(options.fields[i].field, options.fields[i].alias);
+      fieldName = self.schema.fields[options.fields[i]] && self.schema.fields[options.fields[i]].quote ?
+        '`' + options.fields[i].field + '`' : options.fields[i].field;
+      sql.field(fieldName, options.fields[i].alias);
     }
     else {
-      sql.field(options.fields[i]);
+      fieldName = self.schema.fields[options.fields[i]] && self.schema.fields[options.fields[i]].quote ?
+        '`' + options.fields[i] + '`' : options.fields[i];
+      sql.field(fieldName);
     }
   }
 
