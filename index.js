@@ -175,7 +175,10 @@ Table.prototype.insert = function insert(connection, data, options, cb) {
       self.preSave(null, data, true, this, meta);
     },
     function save() {
-      var sql = squel.insert().into(self.tableName);
+      var sql = squel.insert({
+        autoQuoteTableNames: true,
+        autoQuoteFieldNames: true
+      }).into(self.tableName);
 
       for(var field in data) {
         sql.set(field, data[field]);
@@ -251,7 +254,10 @@ Table.prototype.update = function update(connection, ids, data, options, cb) {
       self.preSave(ids, data, false, this, meta);
     },
     function save() {
-      var sql = squel.update().table(self.tableName);
+      var sql = squel.update({
+        autoQuoteTableNames: true,
+        autoQuoteFieldNames: true
+      }).table(self.tableName);
 
       for(var field in data) {
         if (data[field] !== undefined) {
@@ -325,8 +331,10 @@ Table.prototype.remove = function remove(connection, ids, options, cb) {
       self.preDelete(ids, this, meta);
     },
     function remove() {
-      var sql = squel.delete()
-        .from(self.tableName);
+      var sql = squel.delete({
+        autoQuoteTableNames: true,
+        autoQuoteFieldNames: true
+      }).from(self.tableName);
 
       if (idIsObject) {
         for (var i in ids) {
@@ -440,13 +448,16 @@ Table.prototype.find = function find(connection, options, cb) {
 
   options.params = options.params || [];
 
-  options.fields = options.fields || '*';
+  options.fields = options.fields || [];
   options.fields = Array.isArray(options.fields) ? options.fields : [options.fields];
 
   options.order = options.order || [];
   options.order = Array.isArray(options.order) ? options.order : [options.order];
 
-  var sql = squel.select().from(self.tableName);
+  var sql = squel.select({
+    autoQuoteTableNames: true,
+    autoQuoteFieldNames: true
+  }).from(self.tableName);
 
   for (i = 0; i < options.fields.length; i++) {
     if (typeof options.fields[i] === 'object') {
