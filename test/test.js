@@ -262,6 +262,17 @@ describe('Placemat', function() {
           done();
         });
     });
+
+    it('should not crash when error listener is added to exposed stream', function(done) {
+      users.query(db, "SELECT * FROM placemat___") // non-existent table
+        .on('data', function() {})
+        .on('end', function() {
+          done();
+        })
+        .on('error', function(err) {
+          done();
+        });
+    });
   });
 
   describe('#find()', function() {

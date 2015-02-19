@@ -525,7 +525,14 @@ Table.prototype.query = function query(connection, sql, params, options, cb) {
   // If cb is undefined, pass along streams interface
   if (cb == null) {
     var gs = new GetterStream(self, options)
-    return connection.query(sql, params || []).stream(options).pipe(gs);
+      , qs = connection.query(sql, params || []).stream(options);
+
+    // Forward errors on query stream to exposed stream
+    qs.on('error', function(err) {
+      gs.emit('error', err);
+    });
+
+    return qs.pipe(gs);
   }
 
   stride(

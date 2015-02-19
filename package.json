@@ -1,6 +1,6 @@
 {
   "name": "placemat",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "A lightweight module designed to make interacting with SQL databases a little easier.",
   "main": "index.js",
   "dependencies": {
