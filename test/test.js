@@ -174,13 +174,6 @@ describe('Placemat', function() {
     //db.query('DROP TABLE IF EXISTS `placemat_users`', done);
   });
 
-  describe('exports.db', function() {
-    it('should not be null after connection is established', function(done) {
-      db.should.not.equal(null);
-      done();
-    });
-  });
-
   describe('#findById()', function() {
     it('should be able to retrieve a single record by id', function(done) {
       users.findById(db, 1, function(err, res) {
@@ -242,6 +235,32 @@ describe('Placemat', function() {
         res.should.have.keys('id', 'name');
         done();
       });
+    });
+
+    it('should return a stream if no callback is supplied', function(done) {
+      var data = [];
+      users.findById(db, [1, 2])
+        .on('data', function(d) {
+          data.push(d);
+        })
+        .on('end', function() {
+          data.should.have.length(2);
+          data[0].should.have.property('name', 'James');
+          data[1].should.have.property('name', 'John');
+          done();
+        });
+    });
+
+    it('should return stream that implements getters', function(done) {
+      var data = [];
+      users.query(db, "SELECT * FROM placemat_users")
+        .on('data', function(d) {
+          data.push(d);
+        })
+        .on('end', function() {
+          data[0].should.have.property('createdAt', '***');
+          done();
+        });
     });
   });
 

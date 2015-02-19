@@ -5,13 +5,6 @@ A lightweight module designed to make interacting with your SQL tables a little
 easier. Includes features such as validation, getters, setters, pre/post-save
 hooks.
 
-New in v0.11.0
---------------
-Placemat no longer utilizes node-any-db. Database connections must be created in
-your code and passed as an argument to the placemat functions. This was done
-to provide more flexibility with regard to how connections are used (for
-transactions, etc).
-
 Why?
 ----
 
@@ -31,7 +24,6 @@ Placemat is designed to work with the database connection objects instantiated b
 the [node mysql module](https://github.com/felixge/node-mysql) module. The first
 step is to opena connection to your database. Once this is done, the placemat
 functions can be used by passing a connection as the first argument.
-Use `placemat.connect(connOpts, poolOpts)`
 
 ### Schema
 
@@ -226,8 +218,9 @@ Delete record(s) from the table.
 - `cb` - callback of the form `cb(err, affectedRows)`
   - `affectedRows` - the number of database rows that were deleted.
 
-#### Table#findById(connection, ids, [options], cb)
-Retrieve row(s) from the table by id.
+#### Table#findById(connection, ids, [options, cb])
+Retrieve row(s) from the table by id. If no callback is supplied this function
+will return a readable stream.
 - `connection` - database connection object to use for query.
 - `ids` - id(s) of row(s) to retrieve. Can be a single value, or an array of
   several values to retrieve multiple items. Like in `#update()` this parameter
@@ -256,15 +249,17 @@ Retrieve row(s) from the table by id.
     (one for each row retrieved). If only a single id was specified in a
     non-array format, `records` will be an object, or `null`.
 
-#### Table#find(connection, [options], cb)
-Find table rows. By default all rows are retrieved.
+#### Table#find(connection, [options, cb])
+Find table rows. By default all rows are retrieved. If no callback is supplied
+this function will return a readable stream.
 - `connection` - database connection object to use for query.
 - `options` - same as in `Table#findById()`.
 - `cb` - callback of the form `cb(err, records)`
   - `records` - array containing each row that was found.
 
-#### Table#query(connection, sql, [params, options], cb)
-Find table rows using a raw sql query. Useful for more advanced operations.
+#### Table#query(connection, sql, [params, options, cb])
+Find table rows using a raw sql query. Useful for more advanced operations. If
+no callback is supplied this function will return a readable stream.
 - `connection` - database connection object to use for query.
 - `sql` - sql query to execute.
 - `params` - parameters to apply in query.
@@ -273,7 +268,7 @@ Find table rows using a raw sql query. Useful for more advanced operations.
     retrieved fields.
   - `ignoreGetters` - set to `true` if getters should not be applied to
     retrieved fields.
-- `cb` - callback of the form `cb(err, records)`
+- `cb` - callback of the form `cb(err, records)`.
   - `records` - array containing each row that was found.
 
 ### Table Hooks
@@ -377,8 +372,7 @@ hooks and events for a particular action.
 The table functions can return the following errors:
 
 #### placemat.PlacematError
-Generic placemat error. Returned when function is called before database
-connection is initialized.
+Generic placemat error.
 
 #### placemat.ValidationError
 Validation error. Contains `fields` property which is an array containing an

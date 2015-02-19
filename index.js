@@ -1,4 +1,5 @@
 var EventEmitter = require("events").EventEmitter
+  , stream = require("stream")
   , util = require("util")
   , squel = require('squel')
   , stride = require('stride')
@@ -146,6 +147,21 @@ Table.prototype._applyGetters = function _applyGetters(data, options) {
       }
     }
   }
+};
+
+function GetterStream(table, getterOptions) {
+  this.objectMode = true;
+  stream.Transform.call(this, {
+    objectMode: true
+  });
+  this.table = table;
+  this.getterOptions = getterOptions;
+}
+util.inherits(GetterStream, stream.Transform);
+
+GetterStream.prototype._transform = function(chunk, encoding, cb) {
+  this.table._applyGetters(chunk, this.getterOptions);
+  cb(null, chunk);
 };
 
 Table.prototype.insert = function insert(connection, data, options, cb) {
@@ -375,7 +391,7 @@ Table.prototype.findById = function findById(connection, ids, options, cb) {
     , idIsObject = false
     , returnArray = Array.isArray(ids);
 
-  if (!cb) {
+  if (typeof options === 'function') {
     cb = options;
     options = {};
   }
@@ -416,21 +432,15 @@ Table.prototype.findById = function findById(connection, ids, options, cb) {
     options.params = options.params.concat(ids);
   }
 
+  // If we are returning array, or there isn't a callback (i.e. using streams)
+  // pass along to find() as is
+  if (returnArray || cb == null) {
+    return this.find(connection, options, cb);
+  }
+
+  // If only 1 result is requested...
   this.find(connection, options, function(err, results) {
-    if (err) {
-      return cb(err, results);
-    }
-    if (returnArray) {
-      return cb(err, results);
-    }
-    else {
-      if (results.length >= 1) {
-        cb(err, results[0]);
-      }
-      else {
-        cb(err, null);
-      }
-    }
+    return cb(err, results.length ? results[0] : null);
   });
 };
 
@@ -438,11 +448,7 @@ Table.prototype.find = function find(connection, options, cb) {
   var self = this
     , i;
 
-  if (!connection || typeof connection.query !== 'function') {
-    return cb(new PlacematError("Connection object must have query function."));
-  }
-
-  if (cb === undefined) {
+  if (typeof options === 'function') {
     cb = options;
     options = {};
   }
@@ -494,25 +500,32 @@ Table.prototype.find = function find(connection, options, cb) {
   if (options.offset) {
     sql.offset(options.offset);
   }
-  this.query(connection, sql.toString(), options.params, options, cb);
+
+  // query() return value may be a stream
+  return this.query(connection, sql.toString(), options.params, options, cb);
 };
 
 Table.prototype.query = function query(connection, sql, params, options, cb) {
   var self = this;
 
-  // Reorg args
-  if (arguments.length === 3) {
+  if (typeof params === 'function') {
     cb = params;
     params = undefined;
     options = {};
   }
-  else if (arguments.length === 4) {
+  else if (typeof options === 'function') {
     cb = options;
     options = {};
   }
 
   if (!connection || typeof connection.query !== 'function') {
     return cb(new PlacematError("Connection object must have query function."));
+  }
+
+  // If cb is undefined, pass along streams interface
+  if (cb == null) {
+    var gs = new GetterStream(self, options)
+    return connection.query(sql, params || []).stream(options).pipe(gs);
   }
 
   stride(
