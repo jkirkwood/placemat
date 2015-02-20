@@ -417,6 +417,18 @@ describe('Placemat', function() {
         done();
       });
     });
+
+    it('should return a stream if no callback is supplied', function(done) {
+      var data = [];
+      users.find(db)
+        .on('data', function(d) {
+          data.push(d);
+        })
+        .on('end', function() {
+          data.should.have.length(4);
+          done();
+        });
+    });
   });
 
   describe('#query()', function() {

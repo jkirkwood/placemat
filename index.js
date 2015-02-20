@@ -452,6 +452,7 @@ Table.prototype.find = function find(connection, options, cb) {
     cb = options;
     options = {};
   }
+  options = options || {};
 
   options.where = options.where || [];
   options.where = Array.isArray(options.where) ? options.where : [options.where];
@@ -517,6 +518,7 @@ Table.prototype.query = function query(connection, sql, params, options, cb) {
     cb = options;
     options = {};
   }
+  options = options || {};
 
   if (!connection || typeof connection.query !== 'function') {
     return cb(new PlacematError("Connection object must have query function."));
