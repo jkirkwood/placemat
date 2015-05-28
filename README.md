@@ -15,7 +15,7 @@ Installation
 ------------
 
 ```sh
-npm install placement
+npm install placemat
 ```
 
 Usage
