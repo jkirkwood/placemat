@@ -22,7 +22,7 @@ Usage
 -----
 Placemat is designed to work with the database connection objects instantiated by
 the [node mysql module](https://github.com/felixge/node-mysql) module. The first
-step is to opena connection to your database. Once this is done, the placemat
+step is to open a connection to your database. Once this is done, the placemat
 functions can be used by passing a connection as the first argument.
 
 ### Schema
