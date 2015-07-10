@@ -571,15 +571,18 @@ Table.prototype.translateError = function translateError(err) {
       field = err.message.match(/FOREIGN KEY \(`([^`]+)`\)/)[1];
       err = new ValidationError();
       err.addField(field, 'reference not found');
+      err.errno = 1452;
       break;
     case 1062: // ER_DUP_ENTRY
       field = err.message.match(/for key '(.*)'/)[1];
       field = field === 'PRIMARY' ? this.idField : field;
       err = new ValidationError();
       err.addField(field, 'already exists');
+      err.errno = 1062;
       break;
     case 1451: // ER_ROW_IS_REFERENCED_
       err = new ConstraintError();
+      err.errno = 1451;
       break;
     default:
       break;
