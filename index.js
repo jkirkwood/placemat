@@ -16,7 +16,7 @@ squel.registerValueHandler(Date, function(date) {
     ('00' + date.getUTCHours()).slice(-2) + ':' +
     ('00' + date.getUTCMinutes()).slice(-2) + ':' +
     ('00' + date.getUTCSeconds()).slice(-2) + '.' +
-    ('00' + date.getUTCMilliseconds()).slice(-2);
+    ('00' + date.getUTCMilliseconds()).slice(-3);
 });
 
 var Table = exports.Table = function(tableName, idField, schema, options) {
