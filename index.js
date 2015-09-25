@@ -441,7 +441,7 @@ Table.prototype.findById = function findById(connection, ids, options, cb) {
 
   // If only 1 result is requested...
   this.find(connection, options, function(err, results) {
-    return cb(err, results.length ? results[0] : null);
+    return cb(err, (results && results.length) ? results[0] : null);
   });
 };
 
